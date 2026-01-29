@@ -1,0 +1,62 @@
+services:
+  # PostgreSQL: Core Relational Data (Users, Roster, Market)
+  postgres:
+    image: postgres:16-alpine
+    container_name: moba-postgres
+    environment:
+      POSTGRES_DB: moba_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d moba_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB: Match Logs and Flexible Meta Snapshots
+  mongodb:
+    image: mongo:7.0
+    container_name: moba-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: match_history
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Adminer: Web UI for PostgreSQL (Optional helper)
+  adminer:
+    image: adminer
+    container_name: moba-adminer
+    restart: always
+    ports:
+      - "8081:8080"
+
+  # Mongo Express: Web UI for MongoDB (Optional helper)
+  mongo-express:
+    image: mongo-express
+    container_name: moba-mongo-ui
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/
+    ports:
+      - "8082:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  mongo_data:
