@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.infra.exception;
+package com.tfxsoftware.memserver.infra;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
