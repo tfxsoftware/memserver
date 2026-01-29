@@ -23,9 +23,19 @@ configurations {
 repositories {
 	mavenCentral()
 }
+tasks.register<JavaExec>("dev") {
+    group = "application"
+    description = "Runs the Spring Boot application with the 'local' profile."
+    
+    classpath = sourceSets["main"].runtimeClasspath
+		mainClass.set("com.tfxsoftware.memserver.MemserverApplication")
+		dependsOn("classes")
+    
+    // This replaces your long --args command
+    args("--spring.profiles.active=local")
+}
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -34,7 +44,6 @@ dependencies {
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 	runtimeOnly("org.postgresql:postgresql")
 	annotationProcessor("org.projectlombok:lombok")
-	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-data-mongodb-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
