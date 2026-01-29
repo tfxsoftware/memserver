@@ -23,17 +23,6 @@ configurations {
 repositories {
 	mavenCentral()
 }
-tasks.register<JavaExec>("dev") {
-    group = "application"
-    description = "Runs the Spring Boot application with the 'local' profile."
-    
-    classpath = sourceSets["main"].runtimeClasspath
-		mainClass.set("com.tfxsoftware.memserver.MemserverApplication")
-		dependsOn("classes")
-    
-    // This replaces your long --args command
-    args("--spring.profiles.active=local")
-}
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -54,3 +43,16 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+tasks.register<JavaExec>("dev") {
+    group = "application"
+    description = "Runs the Spring Boot application with the 'local' profile."
+    
+    classpath = sourceSets["main"].runtimeClasspath
+		mainClass.set("com.tfxsoftware.memserver.MemserverApplication")
+		dependsOn("classes")
+    
+    // This replaces your long --args command
+    args("--spring.profiles.active=local")
+}
+
