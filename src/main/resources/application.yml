@@ -15,26 +15,16 @@ spring:
     show-sql: ${SPRING_JPA_SHOW_SQL}
 
   # MongoDB Configuration - Using discrete properties for better reliability
-  data:
-    mongodb:
-      host: ${SPRING_DATA_MONGODB_HOST}
-      port: ${SPRING_DATA_MONGODB_PORT}
-      database: ${SPRING_DATA_MONGODB_DATABASE}
-      username: ${SPRING_DATA_MONGODB_USERNAME}
-      password: ${SPRING_DATA_MONGODB_PASSWORD}
-      authentication-database: ${SPRING_DATA_MONGODB_AUTH_DB}
+
+  mongodb:
+    host: ${SPRING_DATA_MONGODB_HOST}
+    port: ${SPRING_DATA_MONGODB_PORT}
+    database: ${SPRING_DATA_MONGODB_DATABASE}
+    username: ${SPRING_DATA_MONGODB_USERNAME}
+    password: ${SPRING_DATA_MONGODB_PASSWORD}
+    authentication-database: ${SPRING_DATA_MONGODB_AUTH_DB}
 
   # Modern Performance: Enabling Virtual Threads for Java 21+
   threads:
     virtual:
       enabled: true
-
-# Management endpoints for monitoring/k8s health checks
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: when_authorized
