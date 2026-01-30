@@ -54,7 +54,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return username;
+        return email; //this is stupid but we need this in order for jwt to work (if we wnat login with email)
     }
 
     @Override
