@@ -6,6 +6,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.tfxsoftware.memserver.modules.players.Player;
+import com.tfxsoftware.memserver.modules.rosters.Roster;
+
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
@@ -45,6 +48,12 @@ public class User implements UserDetails {
     public enum UserRole {
         USER, ADMIN
     }
+
+    @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
+    private List<Roster> rosters;
+
+    @OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
+    private List<Player> ownedPlayers;
 
     // --- UserDetails Implementation Methods ---
 
