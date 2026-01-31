@@ -35,6 +35,13 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Region region;
+
+    public enum Region {
+        SOUTH_AMERICA, NORTH_AMERICA, EUROPE, CIS, ASIA
+    }
     public enum UserRole {
         USER, ADMIN
     }

@@ -37,7 +37,7 @@ public class AuthService {
 
         String hashedPassword = passwordEncoder.encode(dto.getPassword());
 
-        CreateUserDto createUserDto = new CreateUserDto(email, username , hashedPassword);
+        CreateUserDto createUserDto = new CreateUserDto(email, username , hashedPassword, dto.getRegion());
 
         try {
             userService.createUser(createUserDto);

@@ -1,7 +1,10 @@
 package com.tfxsoftware.memserver.modules.auth.dto;
 
+import com.tfxsoftware.memserver.modules.users.User.Region;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.Getter;
@@ -20,4 +23,7 @@ public class SignUpDto {
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
+
+    @NotNull(message = "Region is required")
+    private Region region;
 }

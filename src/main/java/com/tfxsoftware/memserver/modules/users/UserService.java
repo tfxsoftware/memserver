@@ -26,6 +26,7 @@ public class UserService {
         user.setHashedPassword(userDto.getHashedPassword());
         user.setBalance(DEFAULT_BALANCE);
         user.setRole(UserRole.USER);
+        user.setRegion(userDto.getRegion());
 
         return userRepository.save(user);
     }
