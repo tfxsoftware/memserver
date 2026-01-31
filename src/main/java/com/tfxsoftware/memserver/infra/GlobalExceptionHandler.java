@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -108,7 +109,33 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
     }
-    // 6. Fallback for all other unexpected errors
+
+    // 6. Handle Game Logic Errors (Full Roster, etc.)
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex, WebRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Invalid Game State")
+                .message(ex.getMessage()) // This will capture "User already has a full roster..."
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    // 7. Handle 404 - Route Not Found
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException ex, WebRequest request) {
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Resource Not Found")
+                .message(String.format("The endpoint '%s' does not exist.", ex.getResourcePath()))
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+    // 8. Fallback for all other unexpected errors
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
         ErrorResponse error = ErrorResponse.builder()
