@@ -41,4 +41,5 @@ public class PlayerResponse {
     private BigDecimal marketValue;
     private UUID trainingHeroId;
     private HeroRole trainingRole;
+    private UUID rosterId;
 }

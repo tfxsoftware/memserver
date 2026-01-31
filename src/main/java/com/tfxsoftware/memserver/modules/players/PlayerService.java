@@ -129,6 +129,7 @@ public class PlayerService {
                 .marketValue(player.getMarketValue())
                 .trainingHeroId(player.getTrainingHeroId())
                 .trainingRole(player.getTrainingRole())
+                .rosterId(player.getRoster() != null ? player.getRoster().getId() : null)
                 .build();
     }
 }
