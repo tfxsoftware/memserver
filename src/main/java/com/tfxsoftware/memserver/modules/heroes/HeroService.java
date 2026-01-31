@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,9 +15,7 @@ public class HeroService {
     private final HeroRepository heroRepository;
 
     /**
-     * FIX: Added @Transactional(readOnly = true).
-     * This keeps the database session open while the mapToResponse 
-     * logic iterates over the roleSettings collection.
+     * Fetches all heroes and transforms them into DTOs using the flat structure.
      */
     @Transactional(readOnly = true)
     public List<HeroResponse> getAllHeroes() {
@@ -27,22 +24,19 @@ public class HeroService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Maps the Hero entity to a HeroResponse DTO.
+     * This version uses the cleaner Primary/Secondary role fields.
+     */
     private HeroResponse mapToResponse(Hero hero) {
-        Map<Hero.HeroRole, HeroResponse.RoleMetadataResponse> roleSettings = hero.getRoleSettings().entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> HeroResponse.RoleMetadataResponse.builder()
-                                .efficiency(entry.getValue().getEfficiency())
-                                .tier(entry.getValue().getTier())
-                                .multiplier(entry.getValue().getMultiplier())
-                                .build()
-                ));
-
         return HeroResponse.builder()
                 .id(hero.getId())
                 .name(hero.getName())
                 .pictureUrl(hero.getPictureUrl())
-                .roleSettings(roleSettings)
+                .primaryRole(hero.getPrimaryRole())
+                .primaryTier(hero.getPrimaryTier())
+                .secondaryRole(hero.getSecondaryRole())
+                .secondaryTier(hero.getSecondaryTier())
                 .build();
     }
 }

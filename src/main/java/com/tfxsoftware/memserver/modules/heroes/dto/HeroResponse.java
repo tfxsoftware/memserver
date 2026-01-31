@@ -5,13 +5,11 @@ import com.tfxsoftware.memserver.modules.heroes.Hero.MetaTier;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
-import java.util.Map;
 import java.util.UUID;
 
 /**
- * DTO for sending Hero data to the frontend.
- * Mirrors the multi-role metadata structure of the Entity.
+ * Output DTO: Flattened structure for easier consumption by the React frontend.
+ * Provides pre-calculated multipliers for the Primary and Secondary roles.
  */
 @Data
 @Builder
@@ -19,13 +17,12 @@ public class HeroResponse {
     private UUID id;
     private String name;
     private String pictureUrl;
-    private Map<HeroRole, RoleMetadataResponse> roleSettings;
-
-    @Data
-    @Builder
-    public static class RoleMetadataResponse {
-        private BigDecimal efficiency;
-        private MetaTier tier;
-        private BigDecimal multiplier;
-    }
+    
+    // Primary Role Info
+    private HeroRole primaryRole;
+    private MetaTier primaryTier;
+    
+    // Secondary Role Info (Null if the hero is a specialist)
+    private HeroRole secondaryRole;
+    private MetaTier secondaryTier;
 }
