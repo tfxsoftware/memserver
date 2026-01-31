@@ -44,10 +44,6 @@ public class Player {
 
     // --- State & Strategy ---
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Integer energy = 100;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -62,7 +58,7 @@ public class Player {
     private Boolean isStar = false;
     
     @Enumerated(EnumType.STRING)
-    private PlayerTrait playerTrait;
+    private PlayerTrait trait;
 
     // --- Financials & Ownership ---
 
@@ -93,6 +89,6 @@ public class Player {
         LONE_WOLF,      // Increased multipliers, but reduces team Cohesion
         TEAM_PLAYER,    // Increases Roster Cohesion gain rate
         ADAPTIVE,       // Reduces "Off-Role" penalty
-        WORKAHOLIC      // Loses less Energy during Bootcamp/tournament
+        WORKAHOLIC      // Reduces roster energy loss during Bootcamp/tournament
     }
 }

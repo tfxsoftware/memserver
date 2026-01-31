@@ -55,4 +55,9 @@ public class Roster {
     public enum RosterActivity {
         IDLE, BOOTCAMPING, IN_TOURNAMENT
     }
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer energy = 100;
+
 }
