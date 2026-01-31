@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.users;
+package com.tfxsoftware.memserver.modules.users;
 
 import jakarta.persistence.*;
 import lombok.*;

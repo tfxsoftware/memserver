@@ -1,17 +1,16 @@
-package com.tfxsoftware.memserver.auth;
+package com.tfxsoftware.memserver.modules.auth;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.tfxsoftware.memserver.auth.dto.SignInResponse;
-import com.tfxsoftware.memserver.auth.dto.SignUpDto;
-import com.tfxsoftware.memserver.auth.dto.SignInDto;
-import com.tfxsoftware.memserver.users.UserService;
-import com.tfxsoftware.memserver.users.dto.CreateUserDto;
-
-import com.tfxsoftware.memserver.users.User;
+import com.tfxsoftware.memserver.modules.auth.dto.SignInDto;
+import com.tfxsoftware.memserver.modules.auth.dto.SignInResponse;
+import com.tfxsoftware.memserver.modules.auth.dto.SignUpDto;
+import com.tfxsoftware.memserver.modules.users.User;
+import com.tfxsoftware.memserver.modules.users.UserService;
+import com.tfxsoftware.memserver.modules.users.dto.CreateUserDto;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.users;
+package com.tfxsoftware.memserver.modules.users;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.tfxsoftware.memserver.users.User.UserRole;
-import com.tfxsoftware.memserver.users.dto.CreateUserDto;
+import com.tfxsoftware.memserver.modules.users.User.UserRole;
+import com.tfxsoftware.memserver.modules.users.dto.CreateUserDto;
 
 import lombok.RequiredArgsConstructor;
 

@@ -8,7 +8,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.tfxsoftware.memserver.auth.JwtService;
+import com.tfxsoftware.memserver.modules.auth.JwtService;
 
 import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.FilterChain;

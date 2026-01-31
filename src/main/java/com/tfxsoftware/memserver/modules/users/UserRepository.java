@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.users;
+package com.tfxsoftware.memserver.modules.users;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.users;
+package com.tfxsoftware.memserver.modules.users;
 
 import lombok.RequiredArgsConstructor;
 

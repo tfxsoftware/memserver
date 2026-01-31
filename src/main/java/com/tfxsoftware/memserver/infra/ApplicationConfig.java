@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.tfxsoftware.memserver.users.UserService;
+import com.tfxsoftware.memserver.modules.users.UserService;
 
 import lombok.RequiredArgsConstructor;
 

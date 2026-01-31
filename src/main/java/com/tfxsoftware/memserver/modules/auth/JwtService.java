@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.auth;
+package com.tfxsoftware.memserver.modules.auth;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.auth.dto;
+package com.tfxsoftware.memserver.modules.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

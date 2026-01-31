@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.auth;
+package com.tfxsoftware.memserver.modules.auth;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tfxsoftware.memserver.auth.dto.SignInDto;
-import com.tfxsoftware.memserver.auth.dto.SignInResponse;
-import com.tfxsoftware.memserver.auth.dto.SignUpDto;
+import com.tfxsoftware.memserver.modules.auth.dto.SignInDto;
+import com.tfxsoftware.memserver.modules.auth.dto.SignInResponse;
+import com.tfxsoftware.memserver.modules.auth.dto.SignUpDto;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.tfxsoftware.memserver.users.dto;
+package com.tfxsoftware.memserver.modules.users.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Value;
