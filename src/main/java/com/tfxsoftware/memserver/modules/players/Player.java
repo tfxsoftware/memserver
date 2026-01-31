@@ -69,7 +69,7 @@ public class Player {
     @Column(nullable = false)
     private BigDecimal marketValue;
 
-    private LocalDateTime salaryDueDate;
+    private Integer salaryDaysLeft;
 
     @Builder.Default
     private Boolean isListed = false;

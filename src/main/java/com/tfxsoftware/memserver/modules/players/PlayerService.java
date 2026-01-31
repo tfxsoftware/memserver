@@ -80,7 +80,7 @@ public class PlayerService {
                 .condition(Player.PlayerCondition.HEALTHY)
                 .salary(FIXED_SALARY)
                 .marketValue(FIXED_MARKET_VALUE)
-                .salaryDueDate(LocalDateTime.now().plusWeeks(1))
+                .salaryDaysLeft(7)
                 .owner(owner)     // Automatically attach to user
                 .isListed(false)  // Not on market since it's owned
                 .isStar(false)
@@ -118,7 +118,7 @@ public class PlayerService {
                 .condition(player.getCondition())
                 .isStar(player.getIsStar())
                 .salary(player.getSalary())
-                .salaryDueDate(player.getSalaryDueDate())
+                .salaryDaysLeft(player.getSalaryDaysLeft())
                 .marketValue(player.getMarketValue())
                 .trainingHeroId(player.getTrainingHeroId())
                 .trainingRole(player.getTrainingRole())
