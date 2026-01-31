@@ -89,10 +89,10 @@ public class Player {
 
     public enum PlayerTrait {
         CLUTCH_FACTOR,  // Can make difference if game too close
-        LEADER,         // Boosts team Morale when winning
+        LEADER,         // Boosts team Morale when winning, reduces loss when losing
         LONE_WOLF,      // Increased multipliers, but reduces team Cohesion
         TEAM_PLAYER,    // Increases Roster Cohesion gain rate
-        ADAPTIVE,       // Reduces the 20% "Off-Role" penalty
-        WORKAHOLIC      // Loses less Energy during Bootcamp
+        ADAPTIVE,       // Reduces "Off-Role" penalty
+        WORKAHOLIC      // Loses less Energy during Bootcamp/tournament
     }
 }
