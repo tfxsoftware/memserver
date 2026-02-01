@@ -8,6 +8,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,18 +31,11 @@ public class Player {
 
     // --- Mastery Stats ---
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "player_role_masteries", joinColumns = @JoinColumn(name = "player_id"))
-    @MapKeyColumn(name = "role")
-    @MapKeyEnumerated(EnumType.STRING)
-    @Column(name = "mastery_value")
-    private Map<HeroRole, BigDecimal> roleMasteries;
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<PlayerRoleMastery> roleMasteries;
 
-    @ElementCollection
-    @CollectionTable(name = "player_hero_masteries", joinColumns = @JoinColumn(name = "player_id"))
-    @MapKeyColumn(name = "hero_id")
-    @Column(name = "mastery_value")
-    private Map<UUID, Integer> heroMasteries;
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlayerHeroMastery> heroMasteries;
 
     // --- State & Strategy ---
 
@@ -87,11 +81,11 @@ public class Player {
     }
 
     public enum PlayerTrait {
-        CLUTCH_FACTOR,  // Can make difference if game too close
-        LEADER,         // Boosts team Morale when winning, reduces loss when losing
+        CLUTCH_FACTOR,  // Can make difference if game too close - DOES NOT STACK
+        LEADER,         // Boosts team Morale when winning, reduces loss when losing - DOES NOT STACK
         LONE_WOLF,      // Increased multipliers, but reduces team Cohesion
-        TEAM_PLAYER,    // Increases Roster Cohesion gain rate
+        TEAM_PLAYER,    // Increases Roster Cohesion gain rate - STACKS
         ADAPTIVE,       // Trains new heroes faster
-        WORKAHOLIC      // Reduces roster energy loss during Bootcamp/tournament
+        WORKAHOLIC      // Reduces roster energy loss during Bootcamp/tournament - STACKS
     }
 }

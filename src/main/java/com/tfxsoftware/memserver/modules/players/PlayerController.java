@@ -29,9 +29,9 @@ public class PlayerController {
         return ResponseEntity.ok(playerService.getMarketplace());
     }
 
-    @PostMapping("/discover")
+    @PostMapping("/discover/rookie")
     public ResponseEntity<PlayerResponse> generatePlayer(@AuthenticationPrincipal User currentUser) {
-        Player player = playerService.generateRandomPlayer(currentUser);
+        Player player = playerService.generateRookie(currentUser);
         return ResponseEntity.ok(playerService.mapToResponse(player));
     }
 

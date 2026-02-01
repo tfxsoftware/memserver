@@ -21,6 +21,7 @@ import java.util.UUID;
 public class MatchController {
 
     private final MatchService matchService;
+    private final MatchEngineService matchEngineService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -36,5 +37,11 @@ public class MatchController {
             @AuthenticationPrincipal User user
     ) {
         return matchService.updateDraft(id, dto, user);
+    }
+
+    @PostMapping("engine/test/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void simulateGame(@PathVariable UUID id){
+        matchEngineService.simulateMatch(id);
     }
 }

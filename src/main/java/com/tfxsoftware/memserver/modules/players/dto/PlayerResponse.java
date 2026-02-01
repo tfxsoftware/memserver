@@ -29,7 +29,7 @@ public class PlayerResponse {
 
     // Stats & Strategy
     private boolean isScouted;
-    private Map<HeroRole, BigDecimal> roleMasteries;
+    private Map<HeroRole, Integer> roleMasteries;
     private Map<UUID, Integer> championMastery;
     private PlayerTrait trait;
     private PlayerCondition condition;

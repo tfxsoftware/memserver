@@ -19,16 +19,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class PlayerService {
-
     private final PlayerRepository playerRepository;
+    private final PlayerRoleMasteryRepository roleMasteryRepository;
+    private final MasteryService masteryService;
     private final HeroService heroService;
     private final Random random = new Random();
 
     // Fixed Economic Values for MVP Generation
     private static final BigDecimal FIXED_MARKET_VALUE = new BigDecimal("5000.00");
     private static final BigDecimal FIXED_SALARY = new BigDecimal("500.00");
-    private static final BigDecimal INITIAL_ROLE_MASTERY = BigDecimal.ZERO;
-    private static final int INITIAL_HERO_MASTERY_VALUE = 10;
+    private static final int INITIAL_ROLE_LEVEL = 1;
+    private static final long INITIAL_EXPERIENCE = 0L;
 
     @Transactional(readOnly = true)
     public List<PlayerResponse> getMarketplace() {
@@ -65,7 +66,7 @@ public class PlayerService {
      * Checks if the user has room in their roster (Max 5 players).
      */
     @Transactional
-    public Player generateRandomPlayer(User owner) {
+    public Player generateRookie(User owner) {
         // Business Rule: A user cannot have more than 5 players in this recruitment phase
         List<Player> userPlayers = playerRepository.findByOwnerId(owner.getId());
         if (userPlayers.size() >= 5) {
@@ -73,22 +74,6 @@ public class PlayerService {
         }
 
         String nickname = "Rookie_" + random.nextInt(10000);
-        
-        // 1. Fixed Role Masteries (Setting all roles to 0.0)
-        Map<HeroRole, BigDecimal> roleMasteries = new HashMap<>();
-        for (HeroRole role : HeroRole.values()) {
-            roleMasteries.put(role, INITIAL_ROLE_MASTERY);
-        }
-
-        // 2. Random Hero Masteries (Exactly 3 heroes with 10 mastery each)
-        Map<UUID, Integer> heroMasteries = new HashMap<>();
-        List<Hero> allHeroes = heroService.findAll();
-        if (!allHeroes.isEmpty()) {
-            Collections.shuffle(allHeroes);
-            allHeroes.stream()
-                .limit(3)
-                .forEach(hero -> heroMasteries.put(hero.getId(), INITIAL_HERO_MASTERY_VALUE));
-        }
 
         // 3. Assign a single random trait
         Player.PlayerTrait trait = Player.PlayerTrait.values()[random.nextInt(Player.PlayerTrait.values().length)];
@@ -96,8 +81,6 @@ public class PlayerService {
         Player player = Player.builder()
                 .nickname(nickname)
                 .pictureUrl("https://api.dicebear.com/7.x/pixel-art/svg?seed=" + nickname)
-                .roleMasteries(roleMasteries)
-                .heroMasteries(heroMasteries)
                 .trait(trait)
                 .condition(Player.PlayerCondition.HEALTHY)
                 .salary(FIXED_SALARY)
@@ -108,17 +91,52 @@ public class PlayerService {
                 .isStar(false)
                 .build();
 
+        player = playerRepository.save(player);
+
+        // Create Role Masteries for all 5 roles
+        List<PlayerRoleMastery> roleMasteries = new ArrayList<>();
+        for (HeroRole role : HeroRole.values()) {
+            PlayerRoleMastery mastery = PlayerRoleMastery.builder()
+                    .player(player)
+                    .role(role)
+                    .level(INITIAL_ROLE_LEVEL)
+                    .experience(INITIAL_EXPERIENCE)
+                    .build();
+            roleMasteries.add(mastery);
+        }
+        roleMasteryRepository.saveAll(roleMasteries);
+        player.setRoleMasteries(roleMasteries);
+
         log.info("Generated and assigned new rookie player {} to user {}", nickname, owner.getUsername());
-        return playerRepository.save(player);
+        return player;
     }
 
-    /**
-     * Admin functionality: Manually create a player with full customization.
-     */
     @Transactional
-    public Player createPlayer(Player player) {
-        log.info("Admin manually creating player: {}", player.getNickname());
-        return playerRepository.save(player);
+    public Player createPlayer(Player dto) {
+        Player player = playerRepository.save(dto);
+
+        // Create Role Masteries for all 5 roles
+        List<PlayerRoleMastery> roleMasteries = new ArrayList<>();
+        for (HeroRole role : HeroRole.values()) {
+            PlayerRoleMastery mastery = PlayerRoleMastery.builder()
+                    .player(player)
+                    .role(role)
+                    .level(INITIAL_ROLE_LEVEL)
+                    .experience(INITIAL_EXPERIENCE)
+                    .build();
+            roleMasteries.add(mastery);
+        }
+        roleMasteryRepository.saveAll(roleMasteries);
+        player.setRoleMasteries(roleMasteries);
+
+        log.info("Admin created custom player {}", player.getNickname());
+        return player;
+    }
+
+    @Transactional
+    public void addExperience(Player player, HeroRole role, UUID heroId, long amount) {
+        masteryService.addRoleExperience(player, role, amount);
+        masteryService.addHeroExperience(player, heroId, amount);
     }
 
     /**
@@ -126,6 +144,20 @@ public class PlayerService {
      * Visibility changed to public for access in controllers.
      */
     public PlayerResponse mapToResponse(Player player) {
+        Map<HeroRole, Integer> roleMasteries = new HashMap<>();
+        if (player.getRoleMasteries() != null) {
+            for (PlayerRoleMastery rm : player.getRoleMasteries()) {
+                roleMasteries.put(rm.getRole(), rm.getStrength());
+            }
+        }
+
+        Map<UUID, Integer> heroMasteries = new HashMap<>();
+        if (player.getHeroMasteries() != null) {
+            for (PlayerHeroMastery hm : player.getHeroMasteries()) {
+                heroMasteries.put(hm.getHeroId(), hm.getLevel());
+            }
+        }
+
         return PlayerResponse.builder()
                 .id(player.getId())
                 .nickname(player.getNickname())
@@ -133,9 +165,8 @@ public class PlayerService {
                 .ownerId(player.getOwner() != null ? player.getOwner().getId() : null)
                 .ownerName(player.getOwner() != null ? player.getOwner().getUsername() : "Free Agent")
                 .isFreeAgent(player.getOwner() == null)
-                // Detach from Hibernate by creating a new HashMap copy
-                .roleMasteries(player.getRoleMasteries() != null ? new HashMap<>(player.getRoleMasteries()) : new HashMap<>())
-                .championMastery(player.getHeroMasteries() != null ? new HashMap<>(player.getHeroMasteries()) : new HashMap<>())
+                .roleMasteries(roleMasteries)
+                .championMastery(heroMasteries)
                 .trait(player.getTrait())
                 .condition(player.getCondition())
                 .isStar(player.getIsStar())
