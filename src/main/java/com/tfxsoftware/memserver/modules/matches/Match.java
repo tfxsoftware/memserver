@@ -32,9 +32,11 @@ public class Match {
     private MatchStatus status = MatchStatus.SCHEDULED;
 
     @Column(nullable = false)
-    private LocalDateTime scheduledAt;
+    private LocalDateTime scheduledTime;
 
     private LocalDateTime playedAt;
+
+    private UUID eventId;
 
     // --- The Draft Instructions ---
 
