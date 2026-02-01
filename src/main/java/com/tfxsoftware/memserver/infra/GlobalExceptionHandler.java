@@ -111,13 +111,13 @@ public class GlobalExceptionHandler {
     }
 
     // 6. Handle Game Logic Errors (Full Roster, etc.)
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex, WebRequest request) {
+    @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
+    public ResponseEntity<ErrorResponse> handleBadRequestExceptions(RuntimeException ex, WebRequest request) {
         ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error("Invalid Game State")
-                .message(ex.getMessage()) // This will capture "User already has a full roster..."
+                .error("Bad Request")
+                .message(ex.getMessage())
                 .path(request.getDescription(false).replace("uri=", ""))
                 .build();
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
