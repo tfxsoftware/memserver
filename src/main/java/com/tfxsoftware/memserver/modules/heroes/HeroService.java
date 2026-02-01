@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +23,16 @@ public class HeroService {
         return heroRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existsById(UUID id) {
+        return heroRepository.existsById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Hero> findAll() {
+        return heroRepository.findAll();
     }
 
     /**

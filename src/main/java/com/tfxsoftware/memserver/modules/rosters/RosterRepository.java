@@ -8,4 +8,5 @@ import java.util.UUID;
 @Repository
 public interface RosterRepository extends JpaRepository<Roster, UUID> {
     boolean existsByOwnerId(UUID ownerId);
+    java.util.Optional<Roster> findByOwnerId(UUID ownerId);
 }

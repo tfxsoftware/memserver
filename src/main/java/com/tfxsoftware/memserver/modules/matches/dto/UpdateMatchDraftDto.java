@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.UUID;
 
 public record UpdateMatchDraftDto(
-    @NotNull UUID playerId,
     List<UUID> teamBans,
     List<MatchPickDto> pickIntentions
 ) {

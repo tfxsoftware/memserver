@@ -123,7 +123,28 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    // 7. Handle 404 - Route Not Found
+    // 7. Handle Entity Not Found (specifically for generic RuntimeExceptions with "not found" message)
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        String errorTitle = "Bad Request";
+
+        if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
+            status = HttpStatus.NOT_FOUND;
+            errorTitle = "Resource Not Found";
+        }
+
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(errorTitle)
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return new ResponseEntity<>(error, status);
+    }
+
+    // 8. Handle 404 - Route Not Found
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException ex, WebRequest request) {
         ErrorResponse error = ErrorResponse.builder()

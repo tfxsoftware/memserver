@@ -3,28 +3,38 @@ package com.tfxsoftware.memserver.modules.matches;
 import com.tfxsoftware.memserver.modules.matches.dto.CreateMatchDto;
 import com.tfxsoftware.memserver.modules.matches.dto.MatchResponse;
 import com.tfxsoftware.memserver.modules.matches.dto.UpdateMatchDraftDto;
+import com.tfxsoftware.memserver.modules.users.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/matches")
+@RequestMapping("/api/matches")
 @RequiredArgsConstructor
+@EnableMethodSecurity
 public class MatchController {
 
     private final MatchService matchService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public MatchResponse create(@RequestBody @Valid CreateMatchDto dto) {
         return matchService.create(dto);
     }
 
     @PatchMapping("/{id}/draft")
-    public MatchResponse updateDraft(@PathVariable UUID id, @RequestBody @Valid UpdateMatchDraftDto dto) {
-        return matchService.updateDraft(id, dto);
+    public MatchResponse updateDraft(
+            @PathVariable UUID id,
+            @RequestBody @Valid UpdateMatchDraftDto dto,
+            @AuthenticationPrincipal User user
+    ) {
+        return matchService.updateDraft(id, dto, user);
     }
 }

@@ -3,12 +3,13 @@ package com.tfxsoftware.memserver.modules.matches;
 import com.tfxsoftware.memserver.modules.matches.dto.CreateMatchDto;
 import com.tfxsoftware.memserver.modules.matches.dto.MatchResponse;
 import com.tfxsoftware.memserver.modules.matches.dto.UpdateMatchDraftDto;
+import com.tfxsoftware.memserver.modules.heroes.HeroService;
 import com.tfxsoftware.memserver.modules.players.Player;
-import com.tfxsoftware.memserver.modules.players.PlayerRepository;
+import com.tfxsoftware.memserver.modules.players.PlayerService;
+import com.tfxsoftware.memserver.modules.rosters.Roster;
+import com.tfxsoftware.memserver.modules.rosters.RosterService;
 import com.tfxsoftware.memserver.modules.users.User;
-import com.tfxsoftware.memserver.modules.users.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +22,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class MatchService {
-
     private final MatchRepository matchRepository;
-    private final PlayerRepository playerRepository;
-    private final UserService userService;
+    private final PlayerService playerService;
+    private final RosterService rosterService;
+    private final HeroService heroService;
 
     @Transactional
     public MatchResponse create(CreateMatchDto dto) {
@@ -40,48 +41,48 @@ public class MatchService {
     }
 
     @Transactional
-    public MatchResponse updateDraft(UUID matchId, UpdateMatchDraftDto dto) {
+    public MatchResponse updateDraft(UUID matchId, UpdateMatchDraftDto dto, User currentUser) {
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new RuntimeException("Match not found"));
 
-        Player player = playerRepository.findById(dto.playerId())
-                .orElseThrow(() -> new RuntimeException("Player not found"));
+        // Determine if current user is home or away based on the rosters in the match
+        Roster homeRoster = rosterService.findById(match.getHomeRosterId())
+                .orElseThrow(() -> new RuntimeException("Home roster not found"));
+        Roster awayRoster = rosterService.findById(match.getAwayRosterId())
+                .orElseThrow(() -> new RuntimeException("Away roster not found"));
 
-        if (player.getRoster() == null) {
-            throw new RuntimeException("Player does not have a roster");
-        }
-
-        // Authorize: Check if the currentUser owns the roster associated with the playerId
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userService.getUserByEmail(currentEmail);
-
-        if (!player.getRoster().getOwner().getId().equals(currentUser.getId())) {
-            throw new RuntimeException("You do not own the roster for this player");
-        }
-
-        UUID playerRosterId = player.getRoster().getId();
-        boolean isHome = playerRosterId.equals(match.getHomeRosterId());
-        boolean isAway = playerRosterId.equals(match.getAwayRosterId());
+        boolean isHome = homeRoster.getOwner().getId().equals(currentUser.getId());
+        boolean isAway = awayRoster.getOwner().getId().equals(currentUser.getId());
 
         if (!isHome && !isAway) {
-            throw new RuntimeException("Player's roster is not part of this match");
+            throw new RuntimeException("You do not own any roster in this match");
         }
+
+        UUID userRosterId = isHome ? match.getHomeRosterId() : match.getAwayRosterId();
 
         if (isHome) {
             if (dto.teamBans() != null) {
+                validateHeroIds(dto.teamBans());
+                if (dto.teamBans().size() > 5) {
+                    throw new RuntimeException("Ban list cannot exceed 5 heroes");
+                }
                 match.getHomeBans().clear();
                 match.getHomeBans().addAll(dto.teamBans());
             }
             if (dto.pickIntentions() != null) {
-                updatePickIntentions(match.getHomePickIntentions(), dto.pickIntentions(), playerRosterId);
+                updatePickIntentions(match.getHomePickIntentions(), dto.pickIntentions(), userRosterId);
             }
         } else {
             if (dto.teamBans() != null) {
+                validateHeroIds(dto.teamBans());
+                if (dto.teamBans().size() > 5) {
+                    throw new RuntimeException("Ban list cannot exceed 5 heroes");
+                }
                 match.getAwayBans().clear();
                 match.getAwayBans().addAll(dto.teamBans());
             }
             if (dto.pickIntentions() != null) {
-                updatePickIntentions(match.getAwayPickIntentions(), dto.pickIntentions(), playerRosterId);
+                updatePickIntentions(match.getAwayPickIntentions(), dto.pickIntentions(), userRosterId);
             }
         }
 
@@ -91,12 +92,19 @@ public class MatchService {
     private void updatePickIntentions(List<Match.MatchPick> currentPicks, List<UpdateMatchDraftDto.MatchPickDto> newPicks, UUID rosterId) {
         for (UpdateMatchDraftDto.MatchPickDto pickDto : newPicks) {
             // Consistency: Ensure all playerIds inside the pickIntentions list actually belong to the team being updated
-            Player pEntity = playerRepository.findById(pickDto.playerId())
+            Player pEntity = playerService.findById(pickDto.playerId())
                     .orElseThrow(() -> new RuntimeException("Player in pick intentions not found: " + pickDto.playerId()));
 
             if (pEntity.getRoster() == null || !pEntity.getRoster().getId().equals(rosterId)) {
                 throw new RuntimeException("Player " + pickDto.playerId() + " does not belong to the roster");
             }
+
+            // Hero Validation: Ensure preferred heroes exist
+            List<UUID> heroIds = new ArrayList<>();
+            heroIds.add(pickDto.preferredHeroId1());
+            heroIds.add(pickDto.preferredHeroId2());
+            heroIds.add(pickDto.preferredHeroId3());
+            validateHeroIds(heroIds);
 
             // Remove existing pick for this player if it exists
             currentPicks.removeIf(p -> p.getPlayerId().equals(pickDto.playerId()));
@@ -123,6 +131,15 @@ public class MatchService {
             }
             if (!pickOrders.add(pick.getPickOrder())) {
                 throw new RuntimeException("Duplicate pick order in pick intentions: " + pick.getPickOrder());
+            }
+        }
+    }
+
+    private void validateHeroIds(List<UUID> heroIds) {
+        if (heroIds == null || heroIds.isEmpty()) return;
+        for (UUID id : heroIds) {
+            if (id != null && !heroService.existsById(id)) {
+                throw new RuntimeException("Hero not found: " + id);
             }
         }
     }

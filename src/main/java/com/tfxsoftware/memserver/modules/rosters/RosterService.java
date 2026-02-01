@@ -1,7 +1,6 @@
 package com.tfxsoftware.memserver.modules.rosters;
 
 import com.tfxsoftware.memserver.modules.players.Player;
-import com.tfxsoftware.memserver.modules.players.PlayerRepository;
 import com.tfxsoftware.memserver.modules.players.PlayerService;
 import com.tfxsoftware.memserver.modules.rosters.dto.CreateRosterDto;
 import com.tfxsoftware.memserver.modules.rosters.dto.RosterResponse;
@@ -16,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,8 +26,12 @@ import java.util.stream.Collectors;
 public class RosterService {
 
     private final RosterRepository rosterRepository;
-    private final PlayerRepository playerRepository;
     private final PlayerService playerService;
+
+    @Transactional(readOnly = true)
+    public Optional<Roster> findById(UUID id) {
+        return rosterRepository.findById(id);
+    }
 
     @Transactional
     public RosterResponse createRoster(User owner, CreateRosterDto dto) {
@@ -41,7 +45,7 @@ public class RosterService {
             throw new IllegalArgumentException("A roster must have exactly 5 players.");
         }
 
-        List<Player> players = playerRepository.findAllById(dto.getPlayerIds());
+        List<Player> players = playerService.findAllById(dto.getPlayerIds());
 
         if (players.size() != dto.getPlayerIds().size()) {
             throw new IllegalArgumentException("One or more players not found.");
@@ -68,7 +72,7 @@ public class RosterService {
         for (Player player : players) {
             player.setRoster(savedRoster);
         }
-        playerRepository.saveAll(players);
+        playerService.saveAll(players);
 
         log.info("Roster {} created for user {}", savedRoster.getName(), owner.getUsername());
         return mapToResponse(savedRoster);
@@ -94,7 +98,7 @@ public class RosterService {
         allRequestedIds.addAll(playerIdsToAdd);
         allRequestedIds.addAll(playerIdsToRemove);
 
-        List<Player> allRequestedPlayers = playerRepository.findAllById(allRequestedIds);
+        List<Player> allRequestedPlayers = playerService.findAllById(allRequestedIds);
         if (allRequestedPlayers.size() != allRequestedIds.size()) {
             throw new IllegalArgumentException("One or more players not found.");
         }
@@ -149,12 +153,12 @@ public class RosterService {
         for (Player p : playersToRemove) {
             p.setRoster(null);
         }
-        playerRepository.saveAll(playersToRemove);
+        playerService.saveAll(playersToRemove);
 
         for (Player p : playersToAdd) {
             p.setRoster(roster);
         }
-        playerRepository.saveAll(playersToAdd);
+        playerService.saveAll(playersToAdd);
 
         // Update roster's player list for the response
         // Fetch all players that should be in the roster now
@@ -162,7 +166,7 @@ public class RosterService {
         playerIdsToRemove.forEach(finalPlayerIds::remove);
         playersToAdd.forEach(p -> finalPlayerIds.add(p.getId()));
 
-        List<Player> finalPlayers = playerRepository.findAllById(finalPlayerIds);
+        List<Player> finalPlayers = playerService.findAllById(finalPlayerIds);
         roster.setPlayers(finalPlayers);
 
         Roster savedRoster = rosterRepository.save(roster);
@@ -184,7 +188,7 @@ public class RosterService {
             for (Player player : players) {
                 player.setRoster(null);
             }
-            playerRepository.saveAll(players);
+            playerService.saveAll(players);
         }
 
         rosterRepository.delete(roster);
