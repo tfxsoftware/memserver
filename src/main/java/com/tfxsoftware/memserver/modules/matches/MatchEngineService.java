@@ -2,10 +2,7 @@ package com.tfxsoftware.memserver.modules.matches;
 
 import com.tfxsoftware.memserver.modules.heroes.Hero;
 import com.tfxsoftware.memserver.modules.heroes.HeroService;
-import com.tfxsoftware.memserver.modules.players.MasteryService;
 import com.tfxsoftware.memserver.modules.players.Player;
-import com.tfxsoftware.memserver.modules.players.PlayerRoleMastery;
-import com.tfxsoftware.memserver.modules.players.PlayerHeroMastery;
 import com.tfxsoftware.memserver.modules.players.PlayerService;
 import com.tfxsoftware.memserver.modules.rosters.Roster;
 import com.tfxsoftware.memserver.modules.rosters.RosterService;
@@ -28,7 +25,6 @@ public class MatchEngineService {
 
     private final MatchRepository matchRepository;
     private final PlayerService playerService;
-    private final MasteryService masteryService;
     private final HeroService heroService;
     private final RosterService rosterService;
     private final MatchResultService matchResultService;

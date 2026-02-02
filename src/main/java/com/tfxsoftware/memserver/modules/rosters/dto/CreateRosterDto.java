@@ -1,6 +1,5 @@
 package com.tfxsoftware.memserver.modules.rosters.dto;
 
-import com.tfxsoftware.memserver.modules.rosters.Roster;
 import com.tfxsoftware.memserver.modules.users.User.Region;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;

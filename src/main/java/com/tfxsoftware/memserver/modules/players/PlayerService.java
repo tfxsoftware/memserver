@@ -1,8 +1,6 @@
 package com.tfxsoftware.memserver.modules.players;
 
-import com.tfxsoftware.memserver.modules.heroes.Hero;
 import com.tfxsoftware.memserver.modules.heroes.Hero.HeroRole;
-import com.tfxsoftware.memserver.modules.heroes.HeroService;
 import com.tfxsoftware.memserver.modules.players.dto.PlayerResponse;
 import com.tfxsoftware.memserver.modules.users.User;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,7 +19,6 @@ public class PlayerService {
     private final PlayerRepository playerRepository;
     private final PlayerRoleMasteryRepository roleMasteryRepository;
     private final MasteryService masteryService;
-    private final HeroService heroService;
     private final Random random = new Random();
 
     // Fixed Economic Values for MVP Generation
