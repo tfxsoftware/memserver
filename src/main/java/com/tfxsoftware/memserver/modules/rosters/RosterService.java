@@ -1,6 +1,8 @@
 package com.tfxsoftware.memserver.modules.rosters;
 
 import com.tfxsoftware.memserver.modules.players.Player;
+import com.tfxsoftware.memserver.modules.players.PlayerHeroMastery;
+import com.tfxsoftware.memserver.modules.players.PlayerRoleMastery;
 import com.tfxsoftware.memserver.modules.players.PlayerService;
 import com.tfxsoftware.memserver.modules.rosters.dto.CreateRosterDto;
 import com.tfxsoftware.memserver.modules.rosters.dto.RosterResponse;
@@ -195,6 +197,12 @@ public class RosterService {
         log.info("Roster {} deleted by user {}", rosterId, owner.getUsername());
     }
 
+    public List<RosterResponse> getMyRosters(User owner) {
+        return rosterRepository.findAllByOwnerId(owner.getId()).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
     public RosterResponse mapToResponse(Roster roster) {
         return RosterResponse.builder()
                 .id(roster.getId())
@@ -204,11 +212,36 @@ public class RosterService {
                 .cohesion(roster.getCohesion())
                 .morale(roster.getMorale())
                 .energy(roster.getEnergy())
+                .strength(calculateRosterStrength(roster))
                 .players(roster.getPlayers() != null ? 
                         roster.getPlayers().stream().map(playerService::mapToResponse).toList() : 
                         List.of())
                 .build();
     }
 
-    // get roster strength
+    private double calculateRosterStrength(Roster roster) {
+        List<Player> players = roster.getPlayers();
+        if (players == null || players.isEmpty()) {
+            return 0.0;
+        }
+
+        double totalStrength = 0.0;
+        for (Player player : players) {
+            int maxRoleMastery = player.getRoleMasteries() != null ?
+                    player.getRoleMasteries().stream()
+                            .mapToInt(PlayerRoleMastery::getLevel)
+                            .max()
+                            .orElse(1) : 1;
+
+            int maxHeroMastery = player.getHeroMasteries() != null ?
+                    player.getHeroMasteries().stream()
+                            .mapToInt(PlayerHeroMastery::getLevel)
+                            .max()
+                            .orElse(1) : 1;
+
+            totalStrength += (maxRoleMastery + maxHeroMastery) / 2.0;
+        }
+
+        return totalStrength / players.size();
+    }
 }

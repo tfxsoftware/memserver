@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -36,5 +37,10 @@ public class RosterController {
     public ResponseEntity<Void> deleteRoster(@AuthenticationPrincipal User user, @PathVariable UUID id) {
         rosterService.deleteRoster(user, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<RosterResponse>> getMyRosters(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(rosterService.getMyRosters(user));
     }
 }

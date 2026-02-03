@@ -20,5 +20,6 @@ public class RosterResponse {
     private BigDecimal cohesion;
     private BigDecimal morale;
     private Integer energy;
+    private Double strength;
     private List<PlayerResponse> players;
 }
