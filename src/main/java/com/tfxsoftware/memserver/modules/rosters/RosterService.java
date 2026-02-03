@@ -197,13 +197,19 @@ public class RosterService {
         log.info("Roster {} deleted by user {}", rosterId, owner.getUsername());
     }
 
+    @Transactional(readOnly = true)
     public List<RosterResponse> getMyRosters(User owner) {
         return rosterRepository.findAllByOwnerId(owner.getId()).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public RosterResponse mapToResponse(Roster roster) {
+        // Ensure players are loaded if we're in a transaction
+        if (roster.getPlayers() != null) {
+            roster.getPlayers().size(); 
+        }
         return RosterResponse.builder()
                 .id(roster.getId())
                 .name(roster.getName())
