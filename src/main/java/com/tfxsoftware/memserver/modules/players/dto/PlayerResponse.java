@@ -30,7 +30,7 @@ public class PlayerResponse {
     private boolean isScouted;
     private Map<HeroRole, Integer> roleMasteries;
     private Map<UUID, Integer> championMastery;
-    private PlayerTrait trait;
+    private java.util.Set<PlayerTrait> traits;
     private PlayerCondition condition;
     private boolean isStar;
 
