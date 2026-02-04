@@ -50,8 +50,12 @@ public class Player {
     @Builder.Default
     private Boolean isStar = false;
     
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "player_traits", joinColumns = @JoinColumn(name = "player_id"))
     @Enumerated(EnumType.STRING)
-    private PlayerTrait trait;
+    @Column(name = "trait")
+    @Builder.Default
+    private java.util.Set<PlayerTrait> traits = new java.util.HashSet<>();
 
     // --- Financials & Ownership ---
 

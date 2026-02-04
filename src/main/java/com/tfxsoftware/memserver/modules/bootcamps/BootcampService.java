@@ -116,7 +116,7 @@ public class BootcampService {
         int workaholics = 0;
         if (roster.getPlayers() != null) {
             workaholics = (int) roster.getPlayers().stream()
-                    .filter(p -> p.getTrait() == Player.PlayerTrait.WORKAHOLIC)
+                    .filter(p -> p.getTraits().contains(Player.PlayerTrait.WORKAHOLIC))
                     .count();
         }
         int energyDeduction = Math.max(0, BASE_ENERGY_COST_PER_TICK - (workaholics * WORKAHOLIC_ENERGY_REDUCTION));
@@ -128,7 +128,7 @@ public class BootcampService {
         boolean hasLeader = false;
         if (roster.getPlayers() != null) {
             hasLeader = roster.getPlayers().stream()
-                    .anyMatch(p -> p.getTrait() == Player.PlayerTrait.LEADER);
+                    .anyMatch(p -> p.getTraits().contains(Player.PlayerTrait.LEADER));
         }
         java.math.BigDecimal gain = hasLeader ? LEADER_COHESION_GAIN : BASE_COHESION_GAIN;
         java.math.BigDecimal newCohesion = roster.getCohesion().add(gain);
@@ -146,7 +146,7 @@ public class BootcampService {
             long roleXp = (long) (BASE_ROLE_XP * strength);
             masteryService.addRoleExperience(player, config.getTargetRole(), roleXp);
 
-            boolean isAdaptive = player.getTrait() == Player.PlayerTrait.ADAPTIVE;
+            boolean isAdaptive = player.getTraits().contains(Player.PlayerTrait.ADAPTIVE);
             long primaryBase = isAdaptive ? BASE_ADAPTIVE_HERO_XP : BASE_PRIMARY_HERO_XP;
             long secondaryBase = isAdaptive ? BASE_ADAPTIVE_HERO_XP : BASE_SECONDARY_HERO_XP;
 
