@@ -43,19 +43,31 @@ public class MatchEngineService {
 
         log.info("Starting simulation for Match: {}", matchId);
 
-        // 1. Resolve Draft
+        // 1. Resolve Intentions early to avoid redundancy
+        List<Match.MatchPick> homeIntentions = match.getHomePickIntentions();
+        if (homeIntentions == null || homeIntentions.isEmpty()) {
+            log.info("Home team has no pick intentions. Generating default preparation.");
+            homeIntentions = generateDefaultIntentions(match.getHomeRosterId());
+        }
+        List<Match.MatchPick> awayIntentions = match.getAwayPickIntentions();
+        if (awayIntentions == null || awayIntentions.isEmpty()) {
+            log.info("Away team has no pick intentions. Generating default preparation.");
+            awayIntentions = generateDefaultIntentions(match.getAwayRosterId());
+        }
+
+        // 2. Resolve Draft
         log.info("Step 1: Resolving Draft for Match {}", matchId);
-        Map<UUID, Hero> finalizedPicks = resolveDraft(match);
-        List<Hero> homeHeroes = match.getHomePickIntentions().stream().map(p -> finalizedPicks.get(p.getPlayerId())).toList();
-        List<Hero> awayHeroes = match.getAwayPickIntentions().stream().map(p -> finalizedPicks.get(p.getPlayerId())).toList();
+        Map<UUID, Hero> finalizedPicks = resolveDraft(match, homeIntentions, awayIntentions);
+        
+        List<Hero> homeHeroes = homeIntentions.stream().map(p -> finalizedPicks.get(p.getPlayerId())).toList();
+        List<Hero> awayHeroes = awayIntentions.stream().map(p -> finalizedPicks.get(p.getPlayerId())).toList();
         log.info("Draft resolved. Home picks: {}, Away picks: {}", 
                 homeHeroes.stream().map(Hero::getName).toList(), 
                 awayHeroes.stream().map(Hero::getName).toList());
 
-        // 2. Calculate Roster Performances
         log.info("Step 2: Calculating roster performances");
-        RosterPerformance homePerf = calculateRosterPerformance(match.getHomeRosterId(), match.getHomePickIntentions(), finalizedPicks, awayHeroes);
-        RosterPerformance awayPerf = calculateRosterPerformance(match.getAwayRosterId(), match.getAwayPickIntentions(), finalizedPicks, homeHeroes);
+        RosterPerformance homePerf = calculateRosterPerformance(match.getHomeRosterId(), homeIntentions, finalizedPicks, awayHeroes);
+        RosterPerformance awayPerf = calculateRosterPerformance(match.getAwayRosterId(), awayIntentions, finalizedPicks, homeHeroes);
         log.info("Performance calculated. Home Strength: {}, Away Strength: {}", homePerf.totalStrength(), awayPerf.totalStrength());
 
         // 3. Determine Winner (Probabilistic Clutch Logic)
@@ -83,7 +95,7 @@ public class MatchEngineService {
             Player player = playerService.findById(pick.getPlayerId()).orElseThrow();
             Hero hero = picks.get(pick.getPlayerId());
 
-            if (player.getTrait() == Player.PlayerTrait.CLUTCH_FACTOR) {
+            if (player.getTraits().contains(Player.PlayerTrait.CLUTCH_FACTOR)) {
                 hasClutchPlayer = true;
             }
 
@@ -157,7 +169,7 @@ public class MatchEngineService {
         log.info("Player {} performance calculation: (BaseRS: {} * Eff: {} = EffectiveRS: {}) * 0.60 [{}] + (CS: {} * MetaMult: {}) * 0.40 [{}] = Total: {}",
                 player.getNickname(), baseRS, roleEfficiency, effectiveRS, rolePower, cs, metaMult, heroPower, pPower);
 
-        if (player.getTrait() == Player.PlayerTrait.LONE_WOLF) {
+        if (player.getTraits().contains(Player.PlayerTrait.LONE_WOLF)) {
             BigDecimal beforeTrait = pPower;
             pPower = pPower.multiply(new BigDecimal("1.10"));
             log.info("Lone Wolf trait applied to player {}: {} * 1.10 = {}", player.getNickname(), beforeTrait, pPower);
@@ -257,14 +269,17 @@ public class MatchEngineService {
         postMatchProcessor.process(match, winnerId, finalizedPicks);
     }
 
-    private Map<UUID, Hero> resolveDraft(Match match) {
-        Set<UUID> unavailable = Stream.concat(match.getHomeBans().stream(), match.getAwayBans().stream())
+    private Map<UUID, Hero> resolveDraft(Match match, List<Match.MatchPick> homeIntentions, List<Match.MatchPick> awayIntentions) {
+        List<UUID> homeBans = match.getHomeBans() != null ? match.getHomeBans() : List.of();
+        List<UUID> awayBans = match.getAwayBans() != null ? match.getAwayBans() : List.of();
+
+        Set<UUID> unavailable = Stream.concat(homeBans.stream(), awayBans.stream())
                 .collect(Collectors.toSet());
         log.info("Starting draft resolution. Unavailable heroes (bans): {}", unavailable);
 
         List<DraftEntry> sequence = Stream.concat(
-                match.getHomePickIntentions().stream().map(p -> new DraftEntry(p, true)),
-                match.getAwayPickIntentions().stream().map(p -> new DraftEntry(p, false))
+                homeIntentions.stream().map(p -> new DraftEntry(p, true)),
+                awayIntentions.stream().map(p -> new DraftEntry(p, false))
         ).sorted(Comparator.comparingInt(e -> e.pick().getPickOrder())).toList();
 
         Map<UUID, Hero> finalPicks = new HashMap<>();
@@ -301,6 +316,28 @@ public class MatchEngineService {
         return finalPicks;
     }
 
+    private List<Match.MatchPick> generateDefaultIntentions(UUID rosterId) {
+        Roster roster = rosterService.findById(rosterId).orElseThrow();
+        List<Player> players = roster.getPlayers();
+        List<Match.MatchPick> intentions = new ArrayList<>();
+
+        for (int i = 0; i < players.size(); i++) {
+            Player player = players.get(i);
+            Hero.HeroRole primaryRole = player.getRoleMasteries().stream()
+                    .max(Comparator.comparingInt(rm -> rm.getLevel()))
+                    .map(rm -> rm.getRole())
+                    .orElse(Hero.HeroRole.MID); // Fallback
+
+            intentions.add(new Match.MatchPick(
+                    player.getId(),
+                    primaryRole,
+                    null, null, null,
+                    i + 1
+            ));
+        }
+        return intentions;
+    }
+
     private Hero tryAssign(UUID id, Set<UUID> unavailable, List<Hero> all) {
         if (id == null || unavailable.contains(id)) return null;
         return all.stream().filter(h -> h.getId().equals(id)).findFirst().orElse(null);
@@ -311,7 +348,10 @@ public class MatchEngineService {
                 .filter(h -> !unavailable.contains(h.getId()))
                 .filter(h -> h.getPrimaryRole() == role || h.getSecondaryRole() == role)
                 .min(Comparator.comparingInt(h -> h.getPrimaryTier().ordinal()))
-                .orElseThrow();
+                .or(() -> all.stream()
+                        .filter(h -> !unavailable.contains(h.getId()))
+                        .min(Comparator.comparingInt(h -> h.getPrimaryTier().ordinal())))
+                .orElseThrow(() -> new IllegalStateException("No heroes available in the game database to assign."));
     }
 
     private record DraftEntry(Match.MatchPick pick, boolean isHome) {}
