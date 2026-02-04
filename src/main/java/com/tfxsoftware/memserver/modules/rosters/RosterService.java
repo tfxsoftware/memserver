@@ -37,6 +37,10 @@ public class RosterService {
 
     @Transactional
     public RosterResponse createRoster(User owner, CreateRosterDto dto) {
+        if (rosterRepository.existsByOwnerIdAndRegion(owner.getId(), dto.getRegion())) {
+            throw new IllegalArgumentException("You already have a roster in this region.");
+        }
+
         boolean hasRoster = rosterRepository.existsByOwnerId(owner.getId());
 
         if (!hasRoster && !dto.getRegion().equals(owner.getRegion())) {
