@@ -99,16 +99,27 @@ public class MatchEngineService {
         BigDecimal cohesionMult = BigDecimal.ONE.add(roster.getCohesion().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP));
         BigDecimal moraleMult = BigDecimal.ONE.add(roster.getMorale().subtract(new BigDecimal("5.0")).divide(new BigDecimal("50"), 4, RoundingMode.HALF_UP));
 
-        log.info("Roster Stats - Cohesion: {} (x{}), Morale: {} (x{}), Counter Strength: {}, Synergy Strength: {}", 
-                roster.getCohesion(), cohesionMult, roster.getMorale(), moraleMult, counterStrength, synergyStrength);
+        int energy = roster.getEnergy() != null ? roster.getEnergy() : 100;
+        BigDecimal energyMult;
+        if (energy >= 75) {
+            energyMult = BigDecimal.ONE;
+        } else if (energy >= 30) {
+            energyMult = new BigDecimal("0.90");
+        } else {
+            energyMult = new BigDecimal("0.50");
+        }
+
+        log.info("Roster Stats - Cohesion: {} (x{}), Morale: {} (x{}), Energy: {} (x{}), Counter Strength: {}, Synergy Strength: {}", 
+                roster.getCohesion(), cohesionMult, roster.getMorale(), moraleMult, energy, energyMult, counterStrength, synergyStrength);
 
         BigDecimal performanceBeforeMults = sumPlayerPerformance.add(counterStrength).add(synergyStrength);
         BigDecimal totalStrength = performanceBeforeMults
                 .multiply(cohesionMult)
-                .multiply(moraleMult);
+                .multiply(moraleMult)
+                .multiply(energyMult);
         
-        log.info("Roster {} Total Strength Calculation: (SumPlayerPerf: {} + Counter: {} + Synergy: {}) * CohesionMult: {} * MoraleMult: {} = {}",
-                roster.getName(), sumPlayerPerformance, counterStrength, synergyStrength, cohesionMult, moraleMult, totalStrength);
+        log.info("Roster {} Total Strength Calculation: (SumPlayerPerf: {} + Counter: {} + Synergy: {}) * CohesionMult: {} * MoraleMult: {} * EnergyMult: {} = {}",
+                roster.getName(), sumPlayerPerformance, counterStrength, synergyStrength, cohesionMult, moraleMult, energyMult, totalStrength);
 
         return new RosterPerformance(
                 totalStrength,
