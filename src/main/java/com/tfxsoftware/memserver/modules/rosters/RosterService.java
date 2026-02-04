@@ -225,7 +225,12 @@ public class RosterService {
                 .build();
     }
 
-    private double calculateRosterStrength(Roster roster) {
+    @Transactional
+    public Roster save(Roster roster) {
+        return rosterRepository.save(roster);
+    }
+
+    public double calculateRosterStrength(Roster roster) {
         List<Player> players = roster.getPlayers();
         if (players == null || players.isEmpty()) {
             return 0.0;
