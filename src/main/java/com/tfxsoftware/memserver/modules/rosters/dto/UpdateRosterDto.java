@@ -1,5 +1,6 @@
 package com.tfxsoftware.memserver.modules.rosters.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateRosterDto {
+    @NotNull(message = "addPlayerIds cannot be null")
     private List<UUID> addPlayerIds;
+    @NotNull(message = "removePlayerIds cannot be null")
     private List<UUID> removePlayerIds;
 }
+

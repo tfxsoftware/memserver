@@ -4,6 +4,10 @@ import com.tfxsoftware.memserver.modules.heroes.Hero.HeroRole;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -11,25 +15,31 @@ import java.util.UUID;
  * Main wrapper for starting a bootcamp session.
  * Using records for conciseness and immutability.
  */
-public record CreateBootcampSessionDto(
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class CreateBootcampSessionDto {
     @NotEmpty(message = "Bootcamp must include at least one player configuration")
     @Valid
-    List<PlayerTrainingConfigDto> configs
-) {
+    private List<PlayerTrainingConfigDto> configs;
+
     /**
      * Individual training configuration for a player.
      */
-    public record PlayerTrainingConfigDto(
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class PlayerTrainingConfigDto {
         @NotNull(message = "Player ID is required")
-        UUID playerId,
+        private UUID playerId;
 
         @NotNull(message = "Target role is required")
-        HeroRole targetRole,
+        private HeroRole targetRole;
 
         @NotNull(message = "Primary hero is required")
-        UUID primaryHeroId,
+        private UUID primaryHeroId;
 
-        UUID secondaryHeroId1,
-        UUID secondaryHeroId2
-    ) {}
+        private UUID secondaryHeroId1;
+        private UUID secondaryHeroId2;
+    }
 }
