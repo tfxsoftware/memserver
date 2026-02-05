@@ -1,5 +1,6 @@
 package com.tfxsoftware.memserver.modules.bootcamps;
 
+import org.springframework.web.server.ResponseStatusException;
 import com.tfxsoftware.memserver.modules.bootcamps.dto.CreateBootcampSessionDto;
 import com.tfxsoftware.memserver.modules.players.MasteryService;
 import com.tfxsoftware.memserver.modules.players.Player;
@@ -8,8 +9,9 @@ import com.tfxsoftware.memserver.modules.rosters.Roster;
 import com.tfxsoftware.memserver.modules.rosters.RosterService;
 import com.tfxsoftware.memserver.modules.users.User;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,10 +47,10 @@ public class BootcampService {
     @Transactional
     public void startBootcamp(User owner, UUID rosterId, CreateBootcampSessionDto request) {
         Roster roster = rosterService.findById(rosterId)
-                .orElseThrow(() -> new RuntimeException("Roster not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Roster not found"));
 
         if (!roster.getOwner().getId().equals(owner.getId())) {
-            throw new RuntimeException("You do not own this roster");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this roster");
         }
 
         if (roster.getActivity() != Roster.RosterActivity.IDLE) {
@@ -142,7 +144,7 @@ public class BootcampService {
 
         for (PlayerTrainingConfig config : session.getPlayerConfigs()) {
             Player player = playerService.findById(config.getPlayerId())
-                    .orElseThrow(() -> new RuntimeException("Player not found in bootcamp config"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found in bootcamp config"));
 
             long roleXp = (long) (BASE_ROLE_XP * strength);
             masteryService.addRoleExperience(player, config.getTargetRole(), roleXp);
@@ -172,10 +174,10 @@ public class BootcampService {
     @Transactional
     public void stopBootcamp(User owner, UUID rosterId) {
         Roster roster = rosterService.findById(rosterId)
-                .orElseThrow(() -> new RuntimeException("Roster not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Roster not found"));
 
         if (!roster.getOwner().getId().equals(owner.getId())) {
-            throw new RuntimeException("You do not own this roster");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this roster");
         }
 
         stopBootcampInternal(roster);

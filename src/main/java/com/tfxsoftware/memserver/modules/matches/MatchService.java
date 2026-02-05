@@ -1,5 +1,6 @@
 package com.tfxsoftware.memserver.modules.matches;
 
+import org.springframework.web.server.ResponseStatusException;
 import com.tfxsoftware.memserver.modules.matches.dto.CreateMatchDto;
 import com.tfxsoftware.memserver.modules.matches.dto.MatchResponse;
 import com.tfxsoftware.memserver.modules.matches.dto.UpdateMatchDraftDto;
@@ -9,9 +10,10 @@ import com.tfxsoftware.memserver.modules.players.PlayerService;
 import com.tfxsoftware.memserver.modules.rosters.Roster;
 import com.tfxsoftware.memserver.modules.rosters.RosterService;
 import com.tfxsoftware.memserver.modules.users.User;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -43,19 +45,19 @@ public class MatchService {
     @Transactional
     public MatchResponse updateDraft(UUID matchId, UpdateMatchDraftDto dto, User currentUser) {
         Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new RuntimeException("Match not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
 
         // Determine if current user is home or away based on the rosters in the match
         Roster homeRoster = rosterService.findById(match.getHomeRosterId())
-                .orElseThrow(() -> new RuntimeException("Home roster not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Home roster not found"));
         Roster awayRoster = rosterService.findById(match.getAwayRosterId())
-                .orElseThrow(() -> new RuntimeException("Away roster not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Away roster not found"));
 
         boolean isHome = homeRoster.getOwner().getId().equals(currentUser.getId());
         boolean isAway = awayRoster.getOwner().getId().equals(currentUser.getId());
 
         if (!isHome && !isAway) {
-            throw new RuntimeException("You do not own any roster in this match");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own any roster in this match");
         }
 
         UUID userRosterId = isHome ? match.getHomeRosterId() : match.getAwayRosterId();
@@ -64,7 +66,7 @@ public class MatchService {
             if (dto.getTeamBans() != null) {
                 validateHeroIds(dto.getTeamBans());
                 if (dto.getTeamBans().size() > 5) {
-                    throw new RuntimeException("Ban list cannot exceed 5 heroes");
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ban list cannot exceed 5 heroes");
                 }
                 match.getHomeBans().clear();
                 match.getHomeBans().addAll(dto.getTeamBans());
@@ -76,7 +78,7 @@ public class MatchService {
             if (dto.getTeamBans() != null) {
                 validateHeroIds(dto.getTeamBans());
                 if (dto.getTeamBans().size() > 5) {
-                    throw new RuntimeException("Ban list cannot exceed 5 heroes");
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ban list cannot exceed 5 heroes");
                 }
                 match.getAwayBans().clear();
                 match.getAwayBans().addAll(dto.getTeamBans());
@@ -93,10 +95,10 @@ public class MatchService {
         for (UpdateMatchDraftDto.MatchPickDto pickDto : newPicks) {
             // Consistency: Ensure all playerIds inside the pickIntentions list actually belong to the team being updated
             Player pEntity = playerService.findById(pickDto.getPlayerId())
-                    .orElseThrow(() -> new RuntimeException("Player in pick intentions not found: " + pickDto.getPlayerId()));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player in pick intentions not found: " + pickDto.getPlayerId()));
 
             if (pEntity.getRoster() == null || !pEntity.getRoster().getId().equals(rosterId)) {
-                throw new RuntimeException("Player " + pickDto.getPlayerId() + " does not belong to the roster");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Player " + pickDto.getPlayerId() + " does not belong to the roster");
             }
 
             // Hero Validation: Ensure preferred heroes exist
@@ -127,10 +129,10 @@ public class MatchService {
 
         for (Match.MatchPick pick : currentPicks) {
             if (!roles.add(pick.getRole())) {
-                throw new RuntimeException("Duplicate role in pick intentions: " + pick.getRole());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Duplicate role in pick intentions: " + pick.getRole());
             }
             if (!pickOrders.add(pick.getPickOrder())) {
-                throw new RuntimeException("Duplicate pick order in pick intentions: " + pick.getPickOrder());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Duplicate pick order in pick intentions: " + pick.getPickOrder());
             }
         }
     }
@@ -139,7 +141,7 @@ public class MatchService {
         if (heroIds == null || heroIds.isEmpty()) return;
         for (UUID id : heroIds) {
             if (id != null && !heroService.existsById(id)) {
-                throw new RuntimeException("Hero not found: " + id);
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Hero not found: " + id);
             }
         }
     }

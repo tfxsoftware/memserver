@@ -1,10 +1,12 @@
 package com.tfxsoftware.memserver.modules.events;
 
+import org.springframework.web.server.ResponseStatusException;
 import com.tfxsoftware.memserver.modules.events.dto.CreateEventDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -24,7 +26,7 @@ public class EventService {
     public Event createEvent(CreateEventDto dto) {
         // 1. Uniqueness check
         if (eventRepository.findByName(dto.getName()).isPresent()) {
-            throw new RuntimeException("An event with the name '" + dto.getName() + "' already exists.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "An event with the name '" + dto.getName() + "' already exists.");
         }
 
         // 2. Financial Validation: Sum of rank prizes must equal total prize pool
