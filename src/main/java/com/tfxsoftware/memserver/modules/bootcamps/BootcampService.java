@@ -68,15 +68,16 @@ public class BootcampService {
         List<PlayerTrainingConfig> entities = request.configs().stream().map(dto -> 
             PlayerTrainingConfig.builder()
                 .session(session)
-                .playerId(dto.playerId())
-                .targetRole(dto.targetRole())
-                .primaryHeroId(dto.primaryHeroId())
-                .secondaryHeroId1(dto.secondaryHeroId1())
-                .secondaryHeroId2(dto.secondaryHeroId2())
+                .playerId(dto.getPlayerId())
+                .targetRole(dto.getTargetRole())
+                .primaryHeroId(dto.getPrimaryHeroId())
+                .secondaryHeroId1(dto.getSecondaryHeroId1())
+                .secondaryHeroId2(dto.getSecondaryHeroId2())
                 .build()
         ).toList();
 
         session.setPlayerConfigs(entities);
+        
         
         // 3. Update Roster Status
         roster.setActivity(Roster.RosterActivity.BOOTCAMP);

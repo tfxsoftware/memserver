@@ -23,6 +23,10 @@ public class CreateBootcampSessionDto {
     @Valid
     private List<PlayerTrainingConfigDto> configs;
 
+    public List<PlayerTrainingConfigDto> configs() {
+        return configs;
+    }
+
     /**
      * Individual training configuration for a player.
      */
