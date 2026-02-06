@@ -3,6 +3,8 @@ package com.tfxsoftware.memserver.modules.events;
 import java.util.UUID;
 
 import com.tfxsoftware.memserver.modules.events.dto.CreateEventDto;
+import com.tfxsoftware.memserver.modules.events.dto.EventRegistrationResponse;
+import com.tfxsoftware.memserver.modules.events.dto.EventResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,18 +30,16 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<Event> createEvent(@Valid @RequestBody CreateEventDto createEventDto) {
-        Event newEvent = eventService.createEvent(createEventDto);
-        return new ResponseEntity<>(newEvent, HttpStatus.CREATED);
+    public ResponseEntity<EventResponse> createEvent(@Valid @RequestBody CreateEventDto createEventDto) {
+        return new ResponseEntity<>(eventService.createEvent(createEventDto), HttpStatus.CREATED);
     }
 
     @PostMapping("/{eventId}/register/roster/{rosterId}")
-    public ResponseEntity<EventRegistration> registerForEvent(
+    public ResponseEntity<EventRegistrationResponse> registerForEvent(
             @PathVariable UUID eventId,
             @PathVariable UUID rosterId,
             @AuthenticationPrincipal User currentUser) {
         
-        EventRegistration registration = eventService.registerForEvent(eventId, rosterId, currentUser);
-        return new ResponseEntity<>(registration, HttpStatus.CREATED);
+        return new ResponseEntity<>(eventService.registerForEvent(eventId, rosterId, currentUser), HttpStatus.CREATED);
     }
 }

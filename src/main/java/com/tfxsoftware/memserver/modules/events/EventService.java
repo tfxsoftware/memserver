@@ -6,6 +6,8 @@ import com.tfxsoftware.memserver.modules.rosters.Roster; // New import
 import com.tfxsoftware.memserver.modules.rosters.RosterRepository; // New import
 import org.springframework.web.server.ResponseStatusException;
 import com.tfxsoftware.memserver.modules.events.dto.CreateEventDto;
+import com.tfxsoftware.memserver.modules.events.dto.EventRegistrationResponse;
+import com.tfxsoftware.memserver.modules.events.dto.EventResponse;
 import com.tfxsoftware.memserver.modules.events.league.League;
 
 import lombok.RequiredArgsConstructor;
@@ -34,7 +36,7 @@ public class EventService {
      * All events start in the CLOSED status.
      */
     @Transactional
-    public Event createEvent(CreateEventDto dto) {
+    public EventResponse createEvent(CreateEventDto dto) {
         // 1. Uniqueness check
         if (eventRepository.findByName(dto.getName()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "An event with the name '" + dto.getName() + "' already exists.");
@@ -82,7 +84,8 @@ public class EventService {
         }
 
         log.info("Successfully created event: {} (Type: {}, Tier: {})", event.getName(), event.getType(), event.getTier());
-        return eventRepository.save(event);
+        Event savedEvent = eventRepository.save(event);
+        return mapToEventResponse(savedEvent);
     }
 
     /**
@@ -93,7 +96,7 @@ public class EventService {
      * @return The created EventRegistration.
      */
     @Transactional
-    public EventRegistration registerForEvent(UUID eventId, UUID rosterId, User currentUser) {
+    public EventRegistrationResponse registerForEvent(UUID eventId, UUID rosterId, User currentUser) {
         // 1. Fetch Event
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with ID: " + eventId));
@@ -162,7 +165,8 @@ public class EventService {
         rosterRepository.save(roster);
 
         log.info("Roster {} (Owner: {}) registered for event {}. Deducted {}", rosterId, owner.getId(), eventId, event.getEntryFee());
-        return eventRegistrationRepository.save(registration);
+        EventRegistration savedRegistration = eventRegistrationRepository.save(registration);
+        return mapToRegistrationResponse(savedRegistration);
     }
 
     /**
@@ -188,5 +192,38 @@ public class EventService {
                 dto.getTotalPrizePool().toPlainString()
             ));
         }
+    }
+
+    private EventResponse mapToEventResponse(Event event) {
+        return new EventResponse(
+                event.getId(),
+                event.getName(),
+                event.getDescription(),
+                null,
+                event.getRegions().isEmpty() ? null : event.getRegions().iterator().next(),
+                event.getOpensAt(),
+                event.getStartsAt(),
+                event.getFinishesAt(),
+                event.getType(),
+                event.getStatus(),
+                event.getTier(),
+                event.getEntryFee(),
+                event.getTotalPrizePool(),
+                event.getRankPrizes(),
+                event.getGamesPerBlock(),
+                event.getMinutesBetweenGames(),
+                event.getMinutesBetweenBlocks()
+        );
+    }
+
+    private EventRegistrationResponse mapToRegistrationResponse(EventRegistration registration) {
+        return EventRegistrationResponse.builder()
+                .id(registration.getId())
+                .rosterId(registration.getRoster().getId())
+                .rosterName(registration.getRoster().getName())
+                .eventId(registration.getEvent().getId())
+                .eventName(registration.getEvent().getName())
+                .registrationDate(registration.getRegistrationDate())
+                .build();
     }
 }
