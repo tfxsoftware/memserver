@@ -158,6 +158,10 @@ public class EventService {
                 .registrationDate(LocalDateTime.now())
                 .build();
 
+        // 10. Update Roster Status
+        roster.setActivity(Roster.RosterActivity.IN_EVENT);
+        rosterRepository.save(roster);
+
         log.info("Roster {} (Owner: {}) registered for event {}. Deducted {}", rosterId, owner.getId(), eventId, event.getEntryFee());
         return eventRegistrationRepository.save(registration);
     }

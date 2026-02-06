@@ -56,7 +56,7 @@ public class Roster {
     private List<Player> players;
 
     public enum RosterActivity {
-        IDLE, BOOTCAMP, IN_TOURNAMENT
+        IDLE, BOOTCAMP, IN_EVENT
     }
 
     @Builder.Default
