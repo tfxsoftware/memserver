@@ -7,6 +7,9 @@ import com.tfxsoftware.memserver.modules.players.PlayerService;
 import com.tfxsoftware.memserver.modules.rosters.Roster;
 import com.tfxsoftware.memserver.modules.rosters.RosterRepository;
 import com.tfxsoftware.memserver.modules.rosters.RosterService;
+import com.tfxsoftware.memserver.modules.events.Event;
+import com.tfxsoftware.memserver.modules.events.league.LeagueStanding;
+import com.tfxsoftware.memserver.modules.events.league.LeagueStandingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,6 +29,7 @@ public class PostMatchProcessor {
     private final MasteryService masteryService;
     private final RosterService rosterService;
     private final RosterRepository rosterRepository;
+    private final LeagueStandingRepository leagueStandingRepository;
 
     @Transactional
     public void process(Match match, UUID winnerId, Map<UUID, Hero> finalizedPicks) {
@@ -51,7 +55,47 @@ public class PostMatchProcessor {
 
         rosterRepository.save(homeRoster);
         rosterRepository.save(awayRoster);
+
+        // Update League Standings if applicable
+        if (match.getEvent() != null && match.getEvent().getType() == Event.EventType.LEAGUE) {
+            updateLeagueStandings(match.getEvent().getId(), homeRoster.getId(), awayRoster.getId(), winnerId);
+        }
+
         log.info("PostMatchProcessor finished for match {}", match.getId());
+    }
+
+    private void updateLeagueStandings(UUID eventId, UUID homeRosterId, UUID awayRosterId, UUID winnerId) {
+        log.info("Updating league standings for event {}", eventId);
+        
+        LeagueStanding homeStanding = leagueStandingRepository.findByLeagueEventIdAndRosterId(eventId, homeRosterId)
+                .orElseThrow(() -> new IllegalStateException("Standing not found for home roster in league " + eventId));
+        LeagueStanding awayStanding = leagueStandingRepository.findByLeagueEventIdAndRosterId(eventId, awayRosterId)
+                .orElseThrow(() -> new IllegalStateException("Standing not found for away roster in league " + eventId));
+
+        if (winnerId.equals(homeRosterId)) {
+            homeStanding.setWins(homeStanding.getWins() + 1);
+            awayStanding.setLosses(awayStanding.getLosses() + 1);
+        } else {
+            awayStanding.setWins(awayStanding.getWins() + 1);
+            homeStanding.setLosses(homeStanding.getLosses() + 1);
+        }
+
+        leagueStandingRepository.save(homeStanding);
+        leagueStandingRepository.save(awayStanding);
+        
+        recalculatePositions(eventId);
+        
+        log.info("League standings updated: {} (W: {}, L: {}), {} (W: {}, L: {})",
+                homeRosterId, homeStanding.getWins(), homeStanding.getLosses(),
+                awayRosterId, awayStanding.getWins(), awayStanding.getLosses());
+    }
+
+    private void recalculatePositions(UUID eventId) {
+        List<LeagueStanding> standings = leagueStandingRepository.findAllByLeagueEventIdOrderByWinsDesc(eventId);
+        for (int i = 0; i < standings.size(); i++) {
+            standings.get(i).setPosition(i + 1);
+        }
+        leagueStandingRepository.saveAll(standings);
     }
 
     private void processPlayers(List<Match.MatchPick> picks, Map<UUID, Hero> finalizedPicks, boolean won) {

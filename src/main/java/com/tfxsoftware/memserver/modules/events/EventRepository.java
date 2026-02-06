@@ -13,4 +13,5 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     Optional<Event> findByName(String name);
     List<Event> findAllByStatusAndOpensAtBefore(Event.EventStatus status, LocalDateTime dateTime);
     List<Event> findAllByStatusAndStartsAtBefore(Event.EventStatus status, LocalDateTime dateTime);
+    List<Event> findAllByStatusAndFinishesAtBefore(Event.EventStatus status, LocalDateTime dateTime);
 }

@@ -19,9 +19,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class EventOrchestrator {
-
+    
     private final EventRepository eventRepository;
     private final LeagueGenerator leagueGenerator;
+    private final EventService eventService;
 
     /**
      * Runs every minute to check for lifecycle transitions.
@@ -33,6 +34,19 @@ public class EventOrchestrator {
         
         openEligibleEvents(now);
         startEligibleEvents(now);
+        finishEligibleEvents(now);
+    }
+
+    /**
+     * Moves events from ONGOING to FINISHED and distributes prizes.
+     */
+    private void finishEligibleEvents(LocalDateTime now) {
+        List<Event> toFinish = eventRepository.findAllByStatusAndFinishesAtBefore(Event.EventStatus.ONGOING, now);
+        
+        for (Event event : toFinish) {
+            log.info("Finishing Event: {}. Type: {}", event.getName(), event.getType());
+            eventService.finishEvent(event);
+        }
     }
 
     /**
@@ -40,7 +54,7 @@ public class EventOrchestrator {
      */
     private void openEligibleEvents(LocalDateTime now) {
         List<Event> toOpen = eventRepository.findAllByStatusAndOpensAtBefore(Event.EventStatus.CLOSED, now);
-        
+        log.debug("Found {} events to open.", toOpen.size());
         for (Event event : toOpen) {
             log.info("Opening registration for Event: {}", event.getName());
             event.setStatus(Event.EventStatus.OPEN);

@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors; 
 
 /**
@@ -38,7 +39,10 @@ public class LeagueGenerator {
         // 1. Initialize Standings
         initializeStandings(league, participants);
 
-        // 2. Generate Pairings using Circle Method
+        // 2. Initial position calculation (alphabetical or registration order)
+        recalculatePositions(event.getId());
+
+        // 3. Generate Pairings using Circle Method
         List<Roster> teams = new ArrayList<>(participants);
         if (teams.size() % 2 != 0) {
             teams.add(null); // Add a "Bye" team if odd
@@ -104,6 +108,14 @@ public class LeagueGenerator {
                         .losses(0)
                         .build()
                 ).collect(Collectors.toList());        standingRepository.saveAll(standings);
+    }
+
+    private void recalculatePositions(UUID eventId) {
+        List<LeagueStanding> standings = standingRepository.findAllByLeagueEventIdOrderByWinsDesc(eventId);
+        for (int i = 0; i < standings.size(); i++) {
+            standings.get(i).setPosition(i + 1);
+        }
+        standingRepository.saveAll(standings);
     }
 
     private Match buildMatch(Event event, Roster home, Roster away, LocalDateTime time) {

@@ -9,6 +9,8 @@ import com.tfxsoftware.memserver.modules.events.dto.CreateEventDto;
 import com.tfxsoftware.memserver.modules.events.dto.EventRegistrationResponse;
 import com.tfxsoftware.memserver.modules.events.dto.EventResponse;
 import com.tfxsoftware.memserver.modules.events.league.League;
+import com.tfxsoftware.memserver.modules.events.league.LeagueStanding;
+import com.tfxsoftware.memserver.modules.events.league.LeagueStandingRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,8 @@ import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -30,6 +34,7 @@ public class EventService {
     private final UserRepository userRepository;
     private final EventRegistrationRepository eventRegistrationRepository;
     private final RosterRepository rosterRepository; // New injection
+    private final LeagueStandingRepository leagueStandingRepository;
 
     /**
      * Creates a new Event with strict validation on financial and chronological data.
@@ -167,6 +172,58 @@ public class EventService {
         log.info("Roster {} (Owner: {}) registered for event {}. Deducted {}", rosterId, owner.getId(), eventId, event.getEntryFee());
         EventRegistration savedRegistration = eventRegistrationRepository.save(registration);
         return mapToRegistrationResponse(savedRegistration);
+    }
+
+    /**
+     * Finishes an event, sets rosters to IDLE, and distributes prizes.
+     */
+    @Transactional
+    public void finishEvent(Event event) {
+        event.setStatus(Event.EventStatus.FINISHED);
+        
+        // 1. Reset Roster Activities
+        List<Roster> participants = event.getRegistrations().stream()
+                .map(EventRegistration::getRoster)
+                .toList();
+        
+        for (Roster roster : participants) {
+            roster.setActivity(Roster.RosterActivity.IDLE);
+        }
+        rosterRepository.saveAll(participants);
+
+        // 2. Distribute Prizes
+        if (event.getType() == Event.EventType.LEAGUE && event.getLeague() != null) {
+            distributeLeaguePrizes(event);
+        }
+
+        eventRepository.save(event);
+        log.info("Event {} finished and prizes distributed.", event.getName());
+    }
+
+    private void distributeLeaguePrizes(Event event) {
+        List<LeagueStanding> standings = leagueStandingRepository.findAllByLeagueEventIdOrderByWinsDesc(event.getLeague().getEventId());
+        Map<Integer, BigDecimal> prizes = event.getRankPrizes();
+
+        if (prizes == null || prizes.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < standings.size(); i++) {
+            int rank = i + 1;
+            BigDecimal prize = prizes.get(rank);
+            
+            if (prize != null && prize.compareTo(BigDecimal.ZERO) > 0) {
+                LeagueStanding standing = standings.get(i);
+                Roster roster = standing.getRoster();
+                User owner = roster.getOwner();
+
+                owner.setBalance(owner.getBalance().add(prize));
+                userRepository.save(owner);
+                
+                log.info("Prize of {} awarded to {} (Owner: {}) for Rank {} in Event {}", 
+                        prize, roster.getName(), owner.getUsername(), rank, event.getName());
+            }
+        }
     }
 
     /**

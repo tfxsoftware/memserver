@@ -263,7 +263,7 @@ public class MatchEngineService {
     private void saveMatchResult(Match match, RosterPerformance home, RosterPerformance away, UUID winnerId, Map<UUID, Hero> finalizedPicks) {
         match.setStatus(Match.MatchStatus.COMPLETED);
         match.setPlayedAt(LocalDateTime.now());
-        matchResultService.createResult(match, home, away, winnerId);
+        matchResultService.createResult(match, home, away, winnerId, finalizedPicks);
         matchRepository.save(match);
 
         postMatchProcessor.process(match, winnerId, finalizedPicks);
