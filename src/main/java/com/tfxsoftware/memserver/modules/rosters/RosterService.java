@@ -209,6 +209,11 @@ public class RosterService {
     }
 
     @Transactional(readOnly = true)
+    public List<Roster> getMyRostersEntities(User owner) {
+        return rosterRepository.findAllByOwnerId(owner.getId());
+    }
+
+    @Transactional(readOnly = true)
     public RosterResponse mapToResponse(Roster roster) {
         // Ensure players are loaded if we're in a transaction
         if (roster.getPlayers() != null) {

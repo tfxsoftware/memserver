@@ -2,15 +2,15 @@ package com.tfxsoftware.memserver.modules.matches;
 
 import com.tfxsoftware.memserver.modules.events.Event;
 import com.tfxsoftware.memserver.modules.events.EventRepository;
-import com.tfxsoftware.memserver.modules.matches.dto.CreateMatchDto;
-import com.tfxsoftware.memserver.modules.matches.dto.MatchResponse;
-import com.tfxsoftware.memserver.modules.matches.dto.UpdateMatchDraftDto;
+import com.tfxsoftware.memserver.modules.matches.dto.*;
 import com.tfxsoftware.memserver.modules.heroes.HeroService;
 import com.tfxsoftware.memserver.modules.players.Player;
 import com.tfxsoftware.memserver.modules.players.PlayerService;
 import com.tfxsoftware.memserver.modules.rosters.Roster;
 import com.tfxsoftware.memserver.modules.rosters.RosterService;
 import com.tfxsoftware.memserver.modules.users.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +31,7 @@ public class MatchService {
     private final PlayerService playerService;
     private final RosterService rosterService;
     private final HeroService heroService;
+    private final MatchResultRepository matchResultRepository;
 
     @Transactional
     public MatchResponse create(CreateMatchDto dto) {
@@ -153,5 +154,86 @@ public class MatchService {
                 match.getPlayedAt(),
                 match.getEvent() != null ? match.getEvent().getId() : null // Correctly extract UUID from Event proxy
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserMatchScheduleResponse> getMyScheduledMatches(User currentUser) {
+        List<Roster> myRosters = rosterService.getMyRostersEntities(currentUser);
+        List<UUID> myRosterIds = myRosters.stream().map(Roster::getId).toList();
+
+        if (myRosterIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Match> scheduledMatches = matchRepository.findAllByStatusAndHomeRosterIdInOrAwayRosterIdIn(
+                Match.MatchStatus.SCHEDULED,
+                myRosterIds,
+                myRosterIds
+        );
+
+        return scheduledMatches.stream().map(match -> {
+            boolean isHome = myRosterIds.contains(match.getHomeRosterId());
+            UUID myId = isHome ? match.getHomeRosterId() : match.getAwayRosterId();
+            UUID opponentId = isHome ? match.getAwayRosterId() : match.getHomeRosterId();
+
+            String myName = rosterService.findById(myId).map(Roster::getName).orElse("Unknown");
+            String opponentName = rosterService.findById(opponentId).map(Roster::getName).orElse("Unknown");
+            
+            return UserMatchScheduleResponse.builder()
+                    .matchId(match.getId())
+                    .eventId(match.getEvent() != null ? match.getEvent().getId() : null)
+                    .eventName(match.getEvent() != null ? match.getEvent().getName() : null)
+                    .myRosterId(myId)
+                    .myRosterName(myName)
+                    .opponentRosterId(opponentId)
+                    .opponentRosterName(opponentName)
+                    .scheduledTime(match.getScheduledTime())
+                    .status(match.getStatus())
+                    .myBans(isHome ? match.getHomeBans() : match.getAwayBans())
+                    .myPickIntentions(isHome ? match.getHomePickIntentions() : match.getAwayPickIntentions())
+                    .build();
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserMatchHistoryResponse> getMyMatchHistory(User currentUser, Pageable pageable) {
+        List<Roster> myRosters = rosterService.getMyRostersEntities(currentUser);
+        List<UUID> myRosterIds = myRosters.stream().map(Roster::getId).toList();
+
+        if (myRosterIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        Page<Match> completedMatches = matchRepository.findByStatusAndRosterIdsIn(
+                Match.MatchStatus.COMPLETED,
+                myRosterIds,
+                pageable
+        );
+
+        return completedMatches.map(match -> {
+            boolean isHome = myRosterIds.contains(match.getHomeRosterId());
+            UUID myId = isHome ? match.getHomeRosterId() : match.getAwayRosterId();
+            UUID opponentId = isHome ? match.getAwayRosterId() : match.getHomeRosterId();
+
+            String myName = rosterService.findById(myId).map(Roster::getName).orElse("Unknown");
+            String opponentName = rosterService.findById(opponentId).map(Roster::getName).orElse("Unknown");
+
+            MatchResult result = matchResultRepository.findById(match.getId()).orElse(null);
+            boolean isWin = result != null && result.getWinnerRosterId().equals(myId);
+
+            return UserMatchHistoryResponse.builder()
+                    .matchId(match.getId())
+                    .eventId(match.getEvent() != null ? match.getEvent().getId() : null)
+                    .eventName(match.getEvent() != null ? match.getEvent().getName() : null)
+                    .myRosterId(myId)
+                    .myRosterName(myName)
+                    .opponentRosterId(opponentId)
+                    .opponentRosterName(opponentName)
+                    .playedAt(match.getPlayedAt())
+                    .status(match.getStatus())
+                    .isWin(isWin)
+                    .result(result)
+                    .build();
+        });
     }
 }
