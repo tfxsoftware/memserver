@@ -38,11 +38,11 @@ public class HeroDataInitializer implements CommandLineRunner {
             createHero("Rengar", "JUNGLE", MetaTier.A, "TOP", MetaTier.C, HeroArchetype.ASSASSIN),
 
             // --- ADC ---
-            createHero("Vail", "ADC", MetaTier.S, null, null, HeroArchetype.MARKSMAN),
-            createHero("Bolt", "ADC", MetaTier.B, null, null, HeroArchetype.MARKSMAN),
-            createHero("Cinder", "ADC", MetaTier.A, "MID", MetaTier.C, HeroArchetype.MARKSMAN),
-            createHero("Riptide", "ADC", MetaTier.S, null, null, HeroArchetype.MARKSMAN),
-            createHero("Jinx", "ADC", MetaTier.B, null, null, HeroArchetype.MARKSMAN),
+            createHero("Vail", "CARRY", MetaTier.S, null, null, HeroArchetype.MARKSMAN),
+            createHero("Bolt", "CARRY", MetaTier.B, null, null, HeroArchetype.MARKSMAN),
+            createHero("Cinder", "CARRY", MetaTier.A, "MID", MetaTier.C, HeroArchetype.MARKSMAN),
+            createHero("Riptide", "CARRY", MetaTier.S, null, null, HeroArchetype.MARKSMAN),
+            createHero("Jinx", "CARRY", MetaTier.B, null, null, HeroArchetype.MARKSMAN),
 
             // --- TOP ---
             createHero("IronClad", "TOP", MetaTier.A, "JUNGLE", MetaTier.B, HeroArchetype.TANK),

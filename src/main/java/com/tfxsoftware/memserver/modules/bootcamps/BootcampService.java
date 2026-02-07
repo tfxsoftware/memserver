@@ -36,7 +36,7 @@ public class BootcampService {
     private static final long BASE_ROLE_XP = 50L;
     private static final int TICK_HOURS = 6;
     private static final int BASE_ENERGY_COST_PER_TICK = 10;
-    private static final int WORKAHOLIC_ENERGY_REDUCTION = 1;
+    private static final int INSPIRING_ENERGY_REDUCTION = 1;
     private static final java.math.BigDecimal BASE_COHESION_GAIN = new java.math.BigDecimal("0.1");
     private static final java.math.BigDecimal LEADER_COHESION_GAIN = new java.math.BigDecimal("0.2");
     private static final java.math.BigDecimal MAX_COHESION = new java.math.BigDecimal("10.00");
@@ -140,18 +140,18 @@ public class BootcampService {
         log.info("Applying XP tick for roster {} (strength: {})", roster.getId(), strength);
 
         // Deduct energy
-        int workaholics = 0;
+        int inspirings = 0;
         if (roster.getPlayers() != null) {
-            workaholics = (int) roster.getPlayers().stream()
-                    .filter(p -> p.getTraits().contains(Player.PlayerTrait.WORKAHOLIC))
+            inspirings = (int) roster.getPlayers().stream()
+                    .filter(p -> p.getTraits().contains(Player.PlayerTrait.INSPIRING))
                     .count();
         }
-        int energyDeduction = Math.max(0, BASE_ENERGY_COST_PER_TICK - (workaholics * WORKAHOLIC_ENERGY_REDUCTION));
+        int energyDeduction = Math.max(0, BASE_ENERGY_COST_PER_TICK - (inspirings * INSPIRING_ENERGY_REDUCTION));
 
         int currentEnergy = roster.getEnergy() != null ? roster.getEnergy() : 0;
         roster.setEnergy(Math.max(0, currentEnergy - energyDeduction));
-        log.debug("Roster {} energy: {} -> {} (deduction: {}, workaholics: {})", 
-                roster.getId(), currentEnergy, roster.getEnergy(), energyDeduction, workaholics);
+        log.debug("Roster {} energy: {} -> {} (deduction: {}, inspirings: {})",
+                roster.getId(), currentEnergy, roster.getEnergy(), energyDeduction, inspirings);
 
         // Increase cohesion
         boolean hasLeader = false;
@@ -201,7 +201,8 @@ public class BootcampService {
         }
     }
 
-    private void stopBootcampInternal(Roster roster) {
+    @Transactional
+    public void stopBootcampInternal(Roster roster) {
         sessionRepository.deleteById(roster.getId()); // Cascades to configs
         roster.setActivity(Roster.RosterActivity.IDLE);
         rosterService.save(roster);

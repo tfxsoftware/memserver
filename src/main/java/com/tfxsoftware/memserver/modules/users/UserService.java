@@ -9,6 +9,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.tfxsoftware.memserver.modules.users.User.UserRole;
 import com.tfxsoftware.memserver.modules.users.dto.CreateUserDto;
+import com.tfxsoftware.memserver.modules.users.dto.UpdateUserDto;
+import com.tfxsoftware.memserver.modules.users.dto.UserResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -27,8 +29,37 @@ public class UserService {
         user.setBalance(DEFAULT_BALANCE);
         user.setRole(UserRole.USER);
         user.setRegion(userDto.getRegion());
+        user.setOrganizationName(userDto.getOrganizationName());
+        user.setOrganizationImageUrl(userDto.getOrganizationImageUrl());
 
         return userRepository.save(user);
+    }
+
+    public UserResponse updateOrganization(User currentUser, UpdateUserDto dto) {
+        User user = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (dto.getOrganizationName() != null) {
+            user.setOrganizationName(dto.getOrganizationName());
+        }
+        if (dto.getOrganizationImageUrl() != null) {
+            user.setOrganizationImageUrl(dto.getOrganizationImageUrl());
+        }
+
+        return mapToResponse(userRepository.save(user));
+    }
+
+    public UserResponse mapToResponse(User user) {
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .balance(user.getBalance())
+                .role(user.getRole())
+                .region(user.getRegion())
+                .organizationName(user.getOrganizationName())
+                .organizationImageUrl(user.getOrganizationImageUrl())
+                .build();
     }
 
     public User getUserById(UUID id) {

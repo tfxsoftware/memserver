@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -62,7 +63,7 @@ public class Player {
     @Column(nullable = false)
     private BigDecimal salary;
 
-    private Integer salaryDaysLeft;
+    private LocalDateTime nextSalaryPaymentDate;
 
     @Builder.Default
     private Boolean isListed = false;
@@ -85,6 +86,6 @@ public class Player {
         LONE_WOLF,      // Increased multipliers, but reduces team Cohesion
         TEAM_PLAYER,    // Increases Roster Cohesion gain rate - STACKS
         ADAPTIVE,       // Trains new heroes faster
-        WORKAHOLIC      // Reduces roster energy loss during Bootcamp/tournament - STACKS
+        INSPIRING     // Reduces roster energy loss during Bootcamp/tournament - STACKS
     }
 }

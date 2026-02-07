@@ -42,6 +42,10 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Region region;
 
+    private String organizationName;
+
+    private String organizationImageUrl;
+
     public enum Region {
         SOUTH_AMERICA, NORTH_AMERICA, EUROPE, CIS, ASIA
     }

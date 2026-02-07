@@ -8,23 +8,29 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import lombok.AllArgsConstructor;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Value 
+@Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class CreateUserDto {
     @Email
     @NotBlank(message = "Email cannot be empty")
-    String email;
+    private String email;
 
     @NotBlank(message = "Username cannot be empty")
     @Size(min = 3, max = 30, message = "Username must be between 3 and 30 characters")
-    String username;
+    private String username;
 
     @NotBlank(message = "Hashed password cannot be empty")
-    String hashedPassword;
+    private String hashedPassword;
 
     @NotNull(message = "Region cannot be null")
-    Region region;
+    private Region region;
+
+    private String organizationName;
+
+    private String organizationImageUrl;
 }
 

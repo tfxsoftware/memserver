@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,14 +30,14 @@ public class PlayerResponse {
     // Stats & Strategy
     private boolean isScouted;
     private Map<HeroRole, Integer> roleMasteries;
-    private Map<UUID, Integer> championMastery;
+    private Map<UUID, Integer> heroMastery;
     private java.util.Set<PlayerTrait> traits;
     private PlayerCondition condition;
     private boolean isStar;
 
     // Financials & Training
     private BigDecimal salary;
-    private Integer salaryDaysLeft;
+    private LocalDateTime nextSalaryPaymentDate;
     private UUID trainingHeroId;
     private HeroRole trainingRole;
     private UUID rosterId;

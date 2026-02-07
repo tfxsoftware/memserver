@@ -45,7 +45,7 @@ public class Hero {
     private HeroArchetype archetype;
 
     public enum HeroRole {
-        TOP, JUNGLE, MID, ADC, SUPPORT
+        TOP, JUNGLE, MID, CARRY, SUPPORT
     }
 
     /**

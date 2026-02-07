@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -79,7 +80,7 @@ public class PlayerService {
                 .traits(Set.of(trait))
                 .condition(Player.PlayerCondition.HEALTHY)
                 .salary(FIXED_SALARY)
-                .salaryDaysLeft(7)
+                .nextSalaryPaymentDate(LocalDateTime.now().plusDays(7))
                 .owner(owner)     // Automatically attach to user
                 .isListed(false)  // Not on market since it's owned
                 .isStar(false)
@@ -160,12 +161,12 @@ public class PlayerService {
                 .ownerName(player.getOwner() != null ? player.getOwner().getUsername() : "Free Agent")
                 .isFreeAgent(player.getOwner() == null)
                 .roleMasteries(roleMasteries)
-                .championMastery(heroMasteries)
+                .heroMastery(heroMasteries)
                 .traits(player.getTraits())
                 .condition(player.getCondition())
                 .isStar(player.getIsStar())
                 .salary(player.getSalary())
-                .salaryDaysLeft(player.getSalaryDaysLeft())
+                .nextSalaryPaymentDate(player.getNextSalaryPaymentDate())
                 .trainingHeroId(player.getTrainingHeroId())
                 .trainingRole(player.getTrainingRole())
                 .rosterId(player.getRoster() != null ? player.getRoster().getId() : null)

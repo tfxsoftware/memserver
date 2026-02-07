@@ -26,4 +26,8 @@ public class SignUpDto {
 
     @NotNull(message = "Region is required")
     private Region region;
+
+    private String organizationName;
+
+    private String organizationImageUrl;
 }

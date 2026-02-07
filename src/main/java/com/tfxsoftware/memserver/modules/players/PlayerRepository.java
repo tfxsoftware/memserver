@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface PlayerRepository extends JpaRepository<Player, UUID> {
     List<Player> findByOwnerIsNull(); // For the Free Agent market
     List<Player> findByOwnerId(UUID ownerId); // For the User's roster
+    List<Player> findAllByNextSalaryPaymentDateBefore(java.time.LocalDateTime dateTime);
 }

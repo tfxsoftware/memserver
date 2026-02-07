@@ -159,12 +159,12 @@ public class PostMatchProcessor {
         // Energy
         int oldEnergy = roster.getEnergy();
         int energyLoss = -15;
-        long workaholics = players.stream().filter(p -> p.getTraits().contains(Player.PlayerTrait.WORKAHOLIC)).count();
-        energyLoss += (int) (workaholics);
+        long inspirings = players.stream().filter(p -> p.getTraits().contains(Player.PlayerTrait.INSPIRING)).count();
+        energyLoss += (int) (inspirings);
         
         roster.setEnergy(Math.max(0, roster.getEnergy() + energyLoss));
-        log.info("Roster {} Energy updated: {} -> {} (Loss: {}, Workaholics: {})", 
-                roster.getName(), oldEnergy, roster.getEnergy(), energyLoss, workaholics);
+        log.info("Roster {} Energy updated: {} -> {} (Loss: {}, inspirings: {})",
+                roster.getName(), oldEnergy, roster.getEnergy(), energyLoss, inspirings);
     }
 
     private BigDecimal clamp(BigDecimal value, BigDecimal min, BigDecimal max) {
