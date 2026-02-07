@@ -29,6 +29,8 @@ public class CreateEventDto {
 
     private String description;
     
+    private String imageUrl;
+    
     @NotEmpty(message = "At least one region is required") // Changed from NotNull
     private Set<Region> regions; // Changed field to Set
 

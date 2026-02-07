@@ -35,6 +35,8 @@ public class Event {
 
     private String description;
 
+    private String imageUrl;
+
     @ElementCollection(targetClass = User.Region.class) // Annotation for collection of enums
     @CollectionTable(name = "event_regions", joinColumns = @JoinColumn(name = "event_id")) // Table for regions
     @Enumerated(EnumType.STRING)

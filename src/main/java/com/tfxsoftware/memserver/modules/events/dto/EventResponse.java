@@ -18,6 +18,7 @@ public class EventResponse {
     private UUID id;
     private String name;
     private String description;
+    private String imageUrl;
     private String location;
     private User.Region region;
     private LocalDateTime opensAt;

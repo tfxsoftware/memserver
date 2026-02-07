@@ -59,6 +59,7 @@ public class EventService {
         Event event = Event.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
+                .imageUrl(dto.getImageUrl())
                 .regions(dto.getRegions()) // Changed from region
                 .type(dto.getType())
                 .status(Event.EventStatus.CLOSED)
@@ -256,6 +257,7 @@ public class EventService {
                 event.getId(),
                 event.getName(),
                 event.getDescription(),
+                event.getImageUrl(),
                 null,
                 event.getRegions().isEmpty() ? null : event.getRegions().iterator().next(),
                 event.getOpensAt(),
