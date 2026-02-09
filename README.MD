@@ -41,6 +41,7 @@ The system remains "alive" via Cron-based scheduled tasks:
 - Database: PostgreSQL 16 (Relational + JSONB)
 - Containerization: Docker & Docker Compose
 - Build Tool: Gradle (Kotlin DSL)
+- Environment Variables: dotenv-java
 
 ### Getting Started
 
