@@ -2,7 +2,7 @@ E-Strategist Core Engine (Backend)
 
 This is the Backend for E-Strategist. For the corresponding UI, see the Frontend Repository repository.
 
-E-Strategist is a high-performance MOBA management simulation engine built with Spring Boot 3 and Java 21. It manages the game world's logic, from complex match simulations to the player-driven auction house.
+E-Strategist is a high-performance MOBA management simulation engine built with Spring Boot 4 and Java 21. It manages the game world's logic, from complex match simulations to the player-driven auction house.
 
 ### Open Source
 
