@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface LeagueStandingRepository extends JpaRepository<LeagueStanding, UUID> {
     List<LeagueStanding> findAllByLeagueEventIdOrderByWinsDesc(UUID leagueId);
     java.util.Optional<LeagueStanding> findByLeagueEventIdAndRosterId(UUID leagueId, UUID rosterId);
+    java.util.Optional<LeagueStanding> findByRosterId(UUID rosterId);
 }
