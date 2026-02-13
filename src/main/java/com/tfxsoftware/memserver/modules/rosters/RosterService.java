@@ -134,6 +134,16 @@ public class RosterService {
             }
         }
 
+        // Apply cohesion penalty: drop by 1 per added player, never below 0.
+        if (!playersToRemove.isEmpty()) {
+            BigDecimal penalty = new BigDecimal(playersToRemove.size());
+            BigDecimal newCohesion = roster.getCohesion().subtract(penalty);
+            if (newCohesion.compareTo(BigDecimal.ZERO) < 0) {
+                newCohesion = BigDecimal.ZERO;
+            }
+            roster.setCohesion(newCohesion);
+        }
+
         // Identify players to add (only if not already in roster)
         List<Player> playersToAdd = allRequestedPlayers.stream()
                 .filter(p -> playerIdsToAdd.contains(p.getId()) && !currentPlayerIds.contains(p.getId()))
@@ -143,16 +153,6 @@ public class RosterService {
             if (player.getRoster() != null && !player.getRoster().getId().equals(rosterId)) {
                 throw new IllegalArgumentException("Player " + player.getNickname() + " is already assigned to another roster.");
             }
-        }
-
-        // Apply cohesion penalty: drop by 1 per added player, never below 0.
-        if (!playersToAdd.isEmpty()) {
-            BigDecimal penalty = new BigDecimal(playersToAdd.size());
-            BigDecimal newCohesion = roster.getCohesion().subtract(penalty);
-            if (newCohesion.compareTo(BigDecimal.ZERO) < 0) {
-                newCohesion = BigDecimal.ZERO;
-            }
-            roster.setCohesion(newCohesion);
         }
 
         // Update relationships
