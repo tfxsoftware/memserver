@@ -37,6 +37,15 @@ public class UserController {
         return ResponseEntity.ok(playerService.getOwnedPlayer(user, playerId));
     }
 
+    @PostMapping("/me/players/{playerId}/kick")
+    public ResponseEntity<Void> kickPlayer(
+            @AuthenticationPrincipal User user,
+            @PathVariable UUID playerId
+    ) {
+        playerService.kickPlayer(user, playerId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/me/organization")
     public ResponseEntity<UserResponse> updateOrganization(@AuthenticationPrincipal User user, @RequestBody UpdateUserDto dto) {
         return ResponseEntity.ok(userService.updateOrganization(user, dto));

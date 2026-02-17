@@ -168,6 +168,25 @@ public class PlayerService {
     }
 
     /**
+     * Kicks a player: removes them from their roster and from the current user's ownership.
+     * The player becomes a free agent. Only the owner can kick.
+     */
+    @Transactional
+    public void kickPlayer(User owner, UUID playerId) {
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+
+        if (player.getOwner() == null || !player.getOwner().getId().equals(owner.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this player");
+        }
+
+        player.setRoster(null);
+        player.setOwner(null);
+        playerRepository.save(player);
+        log.info("Kicked player {} (id={}) from user {}; player is now a free agent", player.getNickname(), playerId, owner.getUsername());
+    }
+
+    /**
      * Maps the Player entity to a PlayerResponse DTO.
      * Visibility changed to public for access in controllers.
      */
