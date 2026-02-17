@@ -47,38 +47,14 @@ public class RosterService {
             throw new IllegalArgumentException("The first roster must be in the same region as the user.");
         }
 
-        if (dto.getPlayerIds().size() != 5) {
-            throw new IllegalArgumentException("A roster must have exactly 5 players.");
-        }
-
-        List<Player> players = playerService.findAllById(dto.getPlayerIds());
-
-        if (players.size() != dto.getPlayerIds().size()) {
-            throw new IllegalArgumentException("One or more players not found.");
-        }
-
-        for (Player player : players) {
-            if (player.getOwner() == null || !player.getOwner().getId().equals(owner.getId())) {
-                throw new IllegalArgumentException("Player " + player.getNickname() + " does not belong to you.");
-            }
-            if (player.getRoster() != null) {
-                throw new IllegalArgumentException("Player " + player.getNickname() + " is already assigned to a roster.");
-            }
-        }
-
         Roster roster = Roster.builder()
                 .name(dto.getName())
                 .region(dto.getRegion())
                 .owner(owner)
-                .players(players)
                 .build();
 
         Roster savedRoster = rosterRepository.save(roster);
 
-        for (Player player : players) {
-            player.setRoster(savedRoster);
-        }
-        playerService.saveAll(players);
 
         log.info("Roster {} created for user {}", savedRoster.getName(), owner.getUsername());
         return mapToResponse(savedRoster);

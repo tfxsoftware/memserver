@@ -25,7 +25,4 @@ public class CreateRosterDto {
     @NotNull
     private Region region;
 
-    @NotEmpty
-    @Size(min = 5, max = 5, message = "A roster must have exactly " + 5 + " players on creation")
-    private List<UUID> playerIds;
 }

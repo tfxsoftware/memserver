@@ -47,9 +47,15 @@ public class AuthService {
 
         try {
             userService.createUser(createUserDto);
-        
         } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error!");
+            // Log the actual exception for debugging
+            System.err.println("[ERROR] Failed to create user: " + ex.getMessage());
+            ex.printStackTrace();
+            
+            if (ex instanceof ResponseStatusException) {
+                throw (ResponseStatusException) ex;
+            }
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getMessage());
         }
     }
 
