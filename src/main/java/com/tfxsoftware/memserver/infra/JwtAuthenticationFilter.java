@@ -13,6 +13,8 @@ import com.tfxsoftware.memserver.modules.auth.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
+
+import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -61,6 +63,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         } catch (JwtException e) {
             handleException(response, request, "Invalid JWT token", HttpStatus.UNAUTHORIZED);
+            return;
+        } catch (ResponseStatusException e) {
+            // User not found (e.g. deleted) after JWT was accepted -> treat as 401 Unauthorized
+            handleException(response, request, e.getReason() != null ? e.getReason() : "Unauthorized", HttpStatus.UNAUTHORIZED);
             return;
         }
         filterChain.doFilter(request, response);
