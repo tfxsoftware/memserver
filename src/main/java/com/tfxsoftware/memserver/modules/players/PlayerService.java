@@ -1,12 +1,15 @@
 package com.tfxsoftware.memserver.modules.players;
 
 import com.tfxsoftware.memserver.modules.heroes.Hero.HeroRole;
+import com.tfxsoftware.memserver.modules.players.dto.MasteryLevelExpDto;
 import com.tfxsoftware.memserver.modules.players.dto.PlayerResponse;
 import com.tfxsoftware.memserver.modules.users.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,6 +46,18 @@ public class PlayerService {
     }
 
     @Transactional(readOnly = true)
+    public PlayerResponse getOwnedPlayer(User owner, UUID playerId) {
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+
+        if (player.getOwner() == null || !player.getOwner().getId().equals(owner.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this player");
+        }
+
+        return mapToResponse(player);
+    }
+
+    @Transactional(readOnly = true)
     public Optional<Player> findById(UUID id) {
         return playerRepository.findById(id);
     }
@@ -59,14 +74,14 @@ public class PlayerService {
 
     /**
      * Recruitment Logic: Generates a random "Rookie" and attaches it to the user.
-     * Checks if the user has room in their roster (Max 5 players).
+     * Checks if the user has room (max 10 players).
      */
     @Transactional
     public Player generateRookie(User owner) {
-        // Business Rule: A user cannot have more than 5 players in this recruitment phase
+        // Business Rule: A user cannot have more than 10 players
         List<Player> userPlayers = playerRepository.findByOwnerId(owner.getId());
-        if (userPlayers.size() >= 5) {
-            throw new IllegalStateException("User already has a full roster (5 players). Cannot recruit more rookies.");
+        if (userPlayers.size() >= 10) {
+            throw new IllegalStateException("User already has the maximum of 10 players. Cannot recruit more rookies.");
         }
 
         String nickname = "Rookie_" + random.nextInt(10000);
@@ -76,7 +91,7 @@ public class PlayerService {
 
         Player player = Player.builder()
                 .nickname(nickname)
-                .pictureUrl("https://api.dicebear.com/7.x/pixel-art/svg?seed=" + nickname)
+                .pictureUrl("https://api.dicebear.com/7.x/big-smile/svg?seed=" + nickname)
                 .traits(Set.of(trait))
                 .condition(Player.PlayerCondition.HEALTHY)
                 .salary(FIXED_SALARY)
@@ -135,21 +150,45 @@ public class PlayerService {
     }
 
     /**
+     * Adds experience to both role and hero mastery for a player owned by the given user.
+     * Returns the updated player response.
+     */
+    @Transactional
+    public PlayerResponse addExperienceForOwner(User owner, UUID playerId, HeroRole role, UUID heroId, long amount) {
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+
+        if (player.getOwner() == null || !player.getOwner().getId().equals(owner.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this player");
+        }
+
+        addExperience(player, role, heroId, amount);
+        Player updated = playerRepository.findById(playerId).orElse(player);
+        return mapToResponse(updated);
+    }
+
+    /**
      * Maps the Player entity to a PlayerResponse DTO.
      * Visibility changed to public for access in controllers.
      */
     public PlayerResponse mapToResponse(Player player) {
-        Map<HeroRole, Integer> roleMasteries = new HashMap<>();
+        Map<HeroRole, MasteryLevelExpDto> roleMasteries = new HashMap<>();
         if (player.getRoleMasteries() != null) {
             for (PlayerRoleMastery rm : player.getRoleMasteries()) {
-                roleMasteries.put(rm.getRole(), rm.getStrength());
+                roleMasteries.put(rm.getRole(), MasteryLevelExpDto.builder()
+                        .level(rm.getLevel())
+                        .experience(rm.getExperience())
+                        .build());
             }
         }
 
-        Map<UUID, Integer> heroMasteries = new HashMap<>();
+        Map<UUID, MasteryLevelExpDto> heroMasteries = new HashMap<>();
         if (player.getHeroMasteries() != null) {
             for (PlayerHeroMastery hm : player.getHeroMasteries()) {
-                heroMasteries.put(hm.getHeroId(), hm.getLevel());
+                heroMasteries.put(hm.getHeroId(), MasteryLevelExpDto.builder()
+                        .level(hm.getLevel())
+                        .experience(hm.getExperience())
+                        .build());
             }
         }
 
