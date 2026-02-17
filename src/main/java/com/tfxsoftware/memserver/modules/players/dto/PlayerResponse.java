@@ -30,8 +30,8 @@ public class PlayerResponse {
 
     // Stats & Strategy
     private boolean isScouted;
-    private Map<HeroRole, Integer> roleMasteries;
-    private Map<UUID, Integer> heroMastery;
+    private Map<HeroRole, MasteryLevelExpDto> roleMasteries;
+    private Map<UUID, MasteryLevelExpDto> heroMastery;
     private java.util.Set<PlayerTrait> traits;
     private PlayerCondition condition;
     private boolean isStar;
