@@ -6,24 +6,31 @@ import com.tfxsoftware.memserver.modules.rosters.Roster; // New import
 import com.tfxsoftware.memserver.modules.rosters.RosterRepository; // New import
 import org.springframework.web.server.ResponseStatusException;
 import com.tfxsoftware.memserver.modules.events.dto.CreateEventDto;
+import com.tfxsoftware.memserver.modules.events.dto.EventRegisteredRosterDto;
 import com.tfxsoftware.memserver.modules.events.dto.EventRegistrationResponse;
 import com.tfxsoftware.memserver.modules.events.dto.EventResponse;
 import com.tfxsoftware.memserver.modules.events.league.League;
 import com.tfxsoftware.memserver.modules.events.league.LeagueStanding;
 import com.tfxsoftware.memserver.modules.events.league.LeagueStandingRepository;
 
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +42,67 @@ public class EventService {
     private final EventRegistrationRepository eventRegistrationRepository;
     private final RosterRepository rosterRepository; // New injection
     private final LeagueStandingRepository leagueStandingRepository;
+
+    /**
+     * Returns a paginated list of events, optionally filtered by region, status, tier and type.
+     */
+    @Transactional(readOnly = true)
+    public Page<EventResponse> getEvents(Pageable pageable, User.Region region, Event.EventStatus status, Event.Tier tier, Event.EventType type) {
+        Specification<Event> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (region != null) {
+                predicates.add(cb.isMember(region, root.get("regions")));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (tier != null) {
+                predicates.add(cb.equal(root.get("tier"), tier));
+            }
+            if (type != null) {
+                predicates.add(cb.equal(root.get("type"), type));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return eventRepository.findAll(spec, pageable).map(this::mapToEventResponse);
+    }
+
+    /**
+     * Returns rosters registered for an event (name, owner name, cohesion, morale).
+     * For league events, also returns standings (position, wins, losses).
+     */
+    @Transactional(readOnly = true)
+    public List<EventRegisteredRosterDto> getRegisteredRostersForEvent(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found with ID: " + eventId));
+
+        Map<UUID, LeagueStanding> rosterToStanding = Map.of();
+        if (event.getType() == Event.EventType.LEAGUE && event.getLeague() != null) {
+            List<LeagueStanding> standings = leagueStandingRepository.findAllByLeagueEventIdOrderByWinsDesc(eventId);
+            rosterToStanding = standings.stream()
+                    .filter(s -> s.getRoster() != null)
+                    .collect(Collectors.toMap(s -> s.getRoster().getId(), s -> s, (a, b) -> a));
+        }
+
+        final Map<UUID, LeagueStanding> standingMap = rosterToStanding;
+        return eventRegistrationRepository.findAllByEventId(eventId).stream()
+                .map(reg -> {
+                    Roster r = reg.getRoster();
+                    EventRegisteredRosterDto.EventRegisteredRosterDtoBuilder b = EventRegisteredRosterDto.builder()
+                            .name(r.getName())
+                            .ownerName(r.getOwner() != null ? r.getOwner().getUsername() : null)
+                            .cohesion(r.getCohesion())
+                            .morale(r.getMorale());
+                    LeagueStanding standing = standingMap.get(r.getId());
+                    if (standing != null) {
+                        b.position(standing.getPosition())
+                                .wins(standing.getWins())
+                                .losses(standing.getLosses());
+                    }
+                    return b.build();
+                })
+                .toList();
+    }
 
     /**
      * Creates a new Event with strict validation on financial and chronological data.
