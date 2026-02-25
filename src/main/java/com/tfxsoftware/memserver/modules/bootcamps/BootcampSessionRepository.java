@@ -9,8 +9,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 
-public interface BootcampSessionRepository extends JpaRepository<BootcampSession, UUID>{ 
-    
+public interface BootcampSessionRepository extends JpaRepository<BootcampSession, UUID> {
+
+    @Query("SELECT s FROM BootcampSession s JOIN FETCH s.roster r WHERE r.owner.id = :ownerId")
+    List<BootcampSession> findAllByRosterOwnerId(@Param("ownerId") UUID ownerId);
+
     @Query("SELECT s FROM BootcampSession s WHERE s.lastTickAt <= :threshold")
     List<BootcampSession> findAllReadyForTick(@Param("threshold") LocalDateTime threshold);
 }

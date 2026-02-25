@@ -1,7 +1,9 @@
 package com.tfxsoftware.memserver.modules.bootcamps;
 
 import org.springframework.web.server.ResponseStatusException;
+import com.tfxsoftware.memserver.modules.bootcamps.dto.ActiveBootcampResponseDto;
 import com.tfxsoftware.memserver.modules.bootcamps.dto.CreateBootcampSessionDto;
+import com.tfxsoftware.memserver.modules.bootcamps.dto.PlayerTrainingConfigResponseDto;
 import com.tfxsoftware.memserver.modules.players.MasteryService;
 import com.tfxsoftware.memserver.modules.players.Player;
 import com.tfxsoftware.memserver.modules.players.PlayerService;
@@ -34,7 +36,7 @@ public class BootcampService {
     private static final long BASE_SECONDARY_HERO_XP = 50L;
     private static final long BASE_ADAPTIVE_HERO_XP = 80L;
     private static final long BASE_ROLE_XP = 50L;
-    private static final int TICK_HOURS = 6;
+    private static final int TICK_HOURS = 1;
     private static final int BASE_ENERGY_COST_PER_TICK = 10;
     private static final int INSPIRING_ENERGY_REDUCTION = 1;
     private static final java.math.BigDecimal BASE_COHESION_GAIN = new java.math.BigDecimal("0.1");
@@ -91,7 +93,43 @@ public class BootcampService {
         log.info("Bootcamp session created for roster {}", rosterId);
     }
 
-    @Scheduled(cron = "0 0 * * * *") // Every hour
+    /**
+     * Updates the training configuration of an active bootcamp.
+     */
+    @Transactional
+    public void updateBootcamp(User owner, UUID rosterId, CreateBootcampSessionDto request) {
+        BootcampSession session = sessionRepository.findById(rosterId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bootcamp session not found"));
+
+        Roster roster = session.getRoster();
+        if (!roster.getOwner().getId().equals(owner.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this roster");
+        }
+
+        if (roster.getActivity() != Roster.RosterActivity.BOOTCAMP) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Roster is not in an active bootcamp");
+        }
+
+        List<PlayerTrainingConfig> entities = request.configs().stream().map(dto -> {
+            validateUniqueHeroes(dto);
+            return PlayerTrainingConfig.builder()
+                    .session(session)
+                    .playerId(dto.getPlayerId())
+                    .targetRole(dto.getTargetRole())
+                    .primaryHeroId(dto.getPrimaryHeroId())
+                    .secondaryHeroId1(dto.getSecondaryHeroId1())
+                    .secondaryHeroId2(dto.getSecondaryHeroId2())
+                    .build();
+        }).toList();
+
+        session.getPlayerConfigs().clear();
+        session.getPlayerConfigs().addAll(entities);
+        sessionRepository.save(session);
+
+        log.info("Bootcamp configuration updated for roster {}", rosterId);
+    }
+
+    @Scheduled(cron = "0 * * * * *") // Every hour
     @Transactional
     public void processBootcampTicks() {
         log.info("Processing XP ticks");
@@ -218,5 +256,40 @@ public class BootcampService {
         }
 
         stopBootcampInternal(roster);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActiveBootcampResponseDto> getActiveBootcamps(User user) {
+        List<BootcampSession> sessions = sessionRepository.findAllByRosterOwnerId(user.getId());
+        return sessions.stream()
+                .map(this::mapSessionToResponse)
+                .toList();
+    }
+
+    private ActiveBootcampResponseDto mapSessionToResponse(BootcampSession session) {
+        Roster roster = session.getRoster();
+        double strength = rosterService.calculateRosterStrength(roster);
+        List<PlayerTrainingConfigResponseDto> configDtos = session.getPlayerConfigs().stream()
+                .map(c -> PlayerTrainingConfigResponseDto.builder()
+                        .playerId(c.getPlayerId())
+                        .targetRole(c.getTargetRole())
+                        .primaryHeroId(c.getPrimaryHeroId())
+                        .secondaryHeroId1(c.getSecondaryHeroId1())
+                        .secondaryHeroId2(c.getSecondaryHeroId2())
+                        .build())
+                .toList();
+        return ActiveBootcampResponseDto.builder()
+                .rosterId(roster.getId())
+                .rosterName(roster.getName())
+                .rosterRegion(roster.getRegion())
+                .rosterActivity(roster.getActivity())
+                .cohesion(roster.getCohesion())
+                .morale(roster.getMorale())
+                .energy(roster.getEnergy())
+                .strength(strength)
+                .startedAt(session.getStartedAt())
+                .lastTickAt(session.getLastTickAt())
+                .configs(configDtos)
+                .build();
     }
 }

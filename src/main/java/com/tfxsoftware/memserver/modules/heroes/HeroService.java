@@ -1,12 +1,12 @@
 package com.tfxsoftware.memserver.modules.heroes;
 
+import com.tfxsoftware.memserver.modules.heroes.dto.HeroMetaEntryDto;
 import com.tfxsoftware.memserver.modules.heroes.dto.HeroResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +33,33 @@ public class HeroService {
     @Transactional(readOnly = true)
     public List<Hero> findAll() {
         return heroRepository.findAll();
+    }
+
+    /**
+     * Returns all heroes grouped by role, each entry with hero id and meta strength for that role.
+     * A hero appears under each role they have (primary and/or secondary) with the corresponding tier.
+     */
+    @Transactional(readOnly = true)
+    public Map<Hero.HeroRole, List<HeroMetaEntryDto>> getHeroesByMeta() {
+        List<Hero> heroes = heroRepository.findAll();
+        Map<Hero.HeroRole, List<HeroMetaEntryDto>> byRole = new EnumMap<>(Hero.HeroRole.class);
+        for (Hero.HeroRole role : Hero.HeroRole.values()) {
+            byRole.put(role, new ArrayList<>());
+        }
+        for (Hero hero : heroes) {
+            byRole.get(hero.getPrimaryRole()).add(HeroMetaEntryDto.builder()
+                    .hero(hero.getId())
+                    .metastrength(hero.getPrimaryTier())
+                    .build());
+            if (hero.getSecondaryRole() != null && hero.getSecondaryTier() != null) {
+                byRole.get(hero.getSecondaryRole()).add(HeroMetaEntryDto.builder()
+                        .hero(hero.getId())
+                        .metastrength(hero.getSecondaryTier())
+                        .build());
+            }
+        }
+        byRole.values().forEach(list -> list.sort(Comparator.comparing(HeroMetaEntryDto::getMetastrength)));
+        return byRole;
     }
 
     /**
